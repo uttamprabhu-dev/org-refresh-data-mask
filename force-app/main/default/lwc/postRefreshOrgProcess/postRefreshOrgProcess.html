@@ -1,0 +1,25 @@
+<template>
+  <lightning-card icon-name="standard:account">
+
+    <div slot="title">Account</div>
+
+    <div slot="footer">
+      <lightning-button
+        variant="brand"
+        label="Mask data"
+        icon-name="utility:shield"
+        icon-position="left"
+        onclick={handleMaskData}
+      ></lightning-button>
+    </div>
+
+    <div class="slds-p-around_medium">
+
+      <div class="slds-notify slds-notify_alert slds-alert_warning" role="alert">
+        <lightning-icon icon-name="utility:warning" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+        <span class="slds-text-body_small">This action is irreversible. Confirm before proceeding.</span>
+      </div>
+
+    </div>
+  </lightning-card>
+</template>
