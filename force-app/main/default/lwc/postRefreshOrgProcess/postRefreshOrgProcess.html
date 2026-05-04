@@ -1,106 +1,192 @@
 <template>
-  <lightning-card icon-name="standard:account">
-
-    <div slot="title">Account</div>
+  <lightning-card icon-name="utility:shield">
+    <div slot="title">Post Refresh Data Masking</div>
 
     <lightning-tabset active-tab-value="custom">
-      <lightning-tab label="Tab 1" value="standard">
-        <div class="slds-p-around_medium">
-          <h2 class="slds-text-heading_medium slds-m-bottom_medium">Data Masking</h2>
-          
-          <p class="slds-text-body_regular slds-m-bottom_medium">This will mask sensitive data in the account, opportunity and contact records.</p>
 
-          <div class="slds-notify slds-notify_alert slds-alert_warning" role="alert">
-            <lightning-icon icon-name="utility:warning" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-            <span class="slds-text-body_small">This action is irreversible. Confirm before proceeding.</span>
+      <lightning-tab label="Standard Masking" value="standard">
+        <div class="slds-p-around_large">
+
+          <div class="slds-media slds-m-bottom_large">
+            <div class="slds-media__figure slds-media__figure_fixed-width slds-align_absolute-center">
+              <lightning-icon icon-name="utility:shield" size="large"></lightning-icon>
+            </div>
+            <div class="slds-media__body">
+              <h2 class="slds-text-heading_medium slds-m-bottom_x-small">Standard Data Masking</h2>
+              <p class="slds-text-body_regular slds-text-color_weak">
+                Applies predefined masking rules to sensitive fields across Account, Opportunity, and Contact records.
+              </p>
+            </div>
           </div>
 
-          <div class="slds-m-top_medium">
-            <lightning-button
-              variant="brand"
-              label="Mask data"
-              icon-name="utility:shield"
-              icon-position="left"
-              onclick={handleMaskData}
-            ></lightning-button>
+          <div class="warning-banner slds-m-bottom_large">
+            <lightning-icon icon-name="utility:warning" size="small" variant="warning"></lightning-icon>
+            <div class="slds-m-left_small">
+              <p class="slds-text-body_regular warning-title">Irreversible Action</p>
+              <p class="slds-text-body_small">This action cannot be undone. All masked data will be permanently altered. Confirm before proceeding.</p>
+            </div>
           </div>
+
+          <lightning-button
+            variant="destructive"
+            label="Run Standard Masking"
+            icon-name="utility:shield"
+            icon-position="left"
+            onclick={handleMaskData}
+          ></lightning-button>
+
         </div>
       </lightning-tab>
 
-      <lightning-tab label="Tab 2" value="custom">
+      <lightning-tab label="Custom Masking" value="custom">
         <div class="slds-p-around_medium">
-          <h2 class="slds-text-heading_medium slds-m-bottom_medium">Configuration</h2>
-          <lightning-button
-              variant="brand"
-              label="Mask data"
-              icon-name="utility:check"
-              icon-position="left"
-              onclick={handleMaskCustomData}
-            ></lightning-button>
-          
-          <div class="slds-m-bottom_large">
-            <template for:each={tilesList} for:item="tile">
-              <div key={tile.id} class="slds-box slds-m-bottom_medium">
-                <div class="slds-grid slds-gutters">
-                  <div class="slds-col slds-size_1-of-2">
-                    <lightning-combobox
-                      label="Object"
-                      value={tile.object}
-                      options={objectOptions}
-                      onchange={handleObjectChange} 
-                      data-tile-id={tile.id}
-                    ></lightning-combobox>
+
+          <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_medium">
+            <div>
+              <h2 class="slds-text-heading_medium">Custom Field Masking</h2>
+              <p class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">Define which objects and fields to mask.</p>
+            </div>
+            <div>
+              <lightning-button
+                variant="neutral"
+                label="Add Object"
+                icon-name="utility:add"
+                icon-position="left"
+                onclick={handleAddTile}
+                class="slds-m-right_x-small"
+              ></lightning-button>
+              <lightning-button
+                variant="brand"
+                label="Run Masking"
+                icon-name="utility:shield"
+                icon-position="left"
+                onclick={handleMaskCustomData}
+                disabled={noTiles}
+              ></lightning-button>
+            </div>
+          </div>
+
+          <template if:false={hasTiles}>
+            <div class="empty-state slds-text-align_center slds-p-around_xx-large">
+              <div class="empty-icon-wrap slds-m-bottom_medium">
+                <lightning-icon icon-name="utility:database" size="large"></lightning-icon>
+              </div>
+              <h3 class="slds-text-heading_small slds-m-bottom_x-small">No Objects Configured</h3>
+              <p class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">
+                Add objects to configure which fields to mask during org refresh.
+              </p>
+              <lightning-button
+                variant="brand"
+                label="Add First Object"
+                icon-name="utility:add"
+                icon-position="left"
+                onclick={handleAddTile}
+              ></lightning-button>
+            </div>
+          </template>
+
+          <template if:true={hasTiles}>
+
+            <div class="pagination-bar slds-m-bottom_medium">
+              <lightning-button-icon
+                icon-name="utility:chevronleft"
+                variant="border"
+                disabled={isFirstPage}
+                onclick={handlePrevious}
+                alternative-text="Previous"
+              ></lightning-button-icon>
+
+              <div class="page-buttons">
+                <template for:each={paginationItems} for:item="item">
+                  <template if:true={item.isDots}>
+                    <span key={item.key} class="page-dots">…</span>
+                  </template>
+                  <template if:false={item.isDots}>
+                    <button key={item.key} class={item.btnClass} data-page={item.value} onclick={handlePageClick}>
+                      {item.label}
+                    </button>
+                  </template>
+                </template>
+              </div>
+
+              <lightning-button-icon
+                icon-name="utility:chevronright"
+                variant="border"
+                disabled={isLastPage}
+                onclick={handleNext}
+                alternative-text="Next"
+              ></lightning-button-icon>
+
+              <span class="page-count slds-text-body_small slds-text-color_weak">{currentPage} / {totalPages}</span>
+            </div>
+
+            <template for:each={displayedTiles} for:item="tile">
+              <div key={tile.id} class="tile-card">
+
+                <div class="tile-header slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                  <div class="slds-grid slds-grid_vertical-align-center">
+                    <lightning-icon icon-name="utility:database" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+                    <span class="tile-header-label">
+                      <template if:true={tile.object}>{tile.objectLabel}</template>
+                      <template if:false={tile.object}>New Object</template>
+                    </span>
                   </div>
-                  <div class="slds-col slds-size_1-of-2">
-                    <lightning-combobox
-                      label="Fields"
-                      value={tile.selectedFieldId}
-                      options={fieldOptions}
-                      onchange={handleFieldSelect}
-                      onfocus={handleFieldFocus}
-                      data-tile-id={tile.id}
-                      data-object={tile.object}
-                    ></lightning-combobox>
-                    <div class="slds-m-top_medium selected-fields-container">
-                      <template for:each={tile.fields} for:item="field">
-                        <div key={field.value} class="slds-m-bottom_small">
-                          <lightning-button
-                            variant="neutral"
-                            label={field.displayLabel}
-                            title={field.displayLabel}
-                            data-field-value={field.value}
-                            data-tile-id={tile.id}
-                            onclick={handleRemoveField}
-                            icon-name="utility:close"
-                            icon-position="right"
-                          ></lightning-button>
-                        </div>
-                      </template>
+                  <lightning-button-icon
+                    icon-name="utility:delete"
+                    variant="bare-inverse"
+                    alternative-text="Remove"
+                    title="Remove Object"
+                    data-tile-id={tile.id}
+                    onclick={handleDeleteTile}
+                  ></lightning-button-icon>
+                </div>
+
+                <div class="tile-body">
+                  <div class="slds-grid slds-gutters">
+                    <div class="slds-col slds-size_4-of-12">
+                      <lightning-combobox
+                        label="Salesforce Object"
+                        placeholder="Select an object..."
+                        value={tile.object}
+                        options={objectOptions}
+                        onchange={handleObjectChange}
+                        data-tile-id={tile.id}
+                      ></lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_8-of-12">
+                      <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_x-small">
+                        <span class="slds-text-body_small slds-text-color_weak">Fields to mask</span>
+                        <lightning-button
+                          label="Select All"
+                          variant="base"
+                          onclick={handleSelectAllFields}
+                          data-tile-id={tile.id}
+                          disabled={tile.isObjectNotSelected}
+                        ></lightning-button>
+                      </div>
+                      <lightning-dual-listbox
+                        name="fields"
+                        label="Fields"
+                        source-label="Available"
+                        selected-label="To Mask"
+                        options={fieldOptions}
+                        value={tile.selectedFieldValues}
+                        onchange={handleFieldChange}
+                        data-tile-id={tile.id}
+                        disabled={tile.isObjectNotSelected}
+                      ></lightning-dual-listbox>
                     </div>
                   </div>
                 </div>
+
               </div>
             </template>
-          </div>
 
-          <div class="slds-m-top_medium">
-            <lightning-button
-              variant="brand"
-              label="Add Tile"
-              icon-name="utility:add"
-              icon-position="left"
-              onclick={handleAddTile}
-            ></lightning-button>
-            <lightning-button
-              variant="brand"
-              label="Mask data"
-              icon-name="utility:check"
-              icon-position="left"
-              onclick={handleMaskCustomData}
-            ></lightning-button>
-          </div>
+          </template>
+
         </div>
       </lightning-tab>
+
     </lightning-tabset>
 
   </lightning-card>

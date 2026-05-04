@@ -1,4 +1,88 @@
-.selected-fields-container {
+/* Warning banner */
+.warning-banner {
     display: flex;
-    flex-wrap: wrap;
+    align-items: flex-start;
+    background: #fff7d9;
+    border: 1px solid #ffc20e;
+    border-left: 4px solid #ffc20e;
+    border-radius: 4px;
+    padding: 12px 16px;
+}
+.warning-title {
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+/* Tile card */
+.tile-card {
+    border: 1px solid #dddbda;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+.tile-header {
+    background: #0176d3;
+    padding: 10px 16px;
+}
+.tile-header-label {
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+.tile-body {
+    padding: 16px;
+    background: white;
+}
+
+/* Pagination */
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.page-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #dddbda;
+    border-radius: 4px;
+    background: white;
+    color: #0176d3;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    transition: background 0.1s;
+}
+.page-btn:hover {
+    background: #f3f3f3;
+}
+.page-btn-active {
+    background: #0176d3;
+    color: white;
+    border-color: #0176d3;
+    font-weight: 700;
+}
+.page-dots {
+    padding: 0 6px;
+    color: #706e6b;
+    line-height: 32px;
+}
+.page-count {
+    margin-left: 4px;
+}
+
+/* Empty state */
+.empty-state {
+    background: #f9f9f9;
+    border: 2px dashed #dddbda;
+    border-radius: 8px;
+}
+.empty-icon-wrap {
+    opacity: 0.4;
 }

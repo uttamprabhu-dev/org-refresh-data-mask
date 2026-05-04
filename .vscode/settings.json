@@ -1,8 +1,51 @@
 {
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/bower_components": true,
-    "**/.sf": true,
-    "**/.sfdx": true
-  }
+    "files.autoSave": "afterDelay",
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/dist/**": true,
+        "**/build/**": true,
+        "**/out/**": true,
+        "**/.git/objects/**": true,
+        "**/*.log": true,
+        "**/vendor/**": true,
+        "**/target/**": true,
+        "**/.venv/**": true,
+        "**/env/**": true,
+        "**/venv/**": true,
+        "**/.husky/**": true,
+        "**/.sfdx/**": true
+    },
+    "search.exclude": {
+        "**/node_modules/**": true,
+        "**/dist/**": true,
+        "**/build/**": true,
+        "**/out/**": true,
+        "**/.git/**": true,
+        "**/vendor/**": true,
+        "**/target/**": true,
+        "**/.venv/**": true,
+        "**/env/**": true,
+        "**/venv/**": true,
+        "**/.husky/**": true,
+        "**/.sfdx/**": true
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/dist/**": true,
+        "**/build/**": true,
+        "**/.vscode": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/node_modules": true,
+        "node_modules": true,
+        "venv": true,
+        "**/.venv/**": true,
+        "**/env/**": true,
+        "**/venv/**": true,
+        "*.sublime-*": true,
+        "**/.husky/**": true,
+        "**/.sfdx/**": true
+    }
+
 }
