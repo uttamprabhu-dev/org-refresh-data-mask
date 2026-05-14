@@ -14,12 +14,13 @@ public class Batch_MaskQuoteRecordsDetails implements Database.Batchable<sObject
         );
     }
 
-    public void execute(Database.BatchableContext bc, List<Quote> scope) {
+    public void execute(Database.BatchableContext bc, List<SObject> scope) {
+        List<Quote> quotes = (List<Quote>) scope;
         List<Quote> quotesToUpdate = new List<Quote>();
         Map<Id, Opportunity>map_oppsToUpdate = new Map<Id, Opportunity>();
         Map<Id, Account> map_accountsToUpdate = new Map<Id, Account>();
 
-        for (Quote q : scope) {
+        for (Quote q : quotes) {
 
             // 1. Update Quote field (every quote gets updated)
             q.Name = DataMaskHelper.generateRandomString(8, DataMaskHelper.ALPHANUMERIC);

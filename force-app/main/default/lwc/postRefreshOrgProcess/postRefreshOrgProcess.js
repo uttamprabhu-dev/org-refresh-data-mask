@@ -1,10 +1,31 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, track, wire } from 'lwc';
+import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
+import userId from '@salesforce/user/Id';
+import PROFILE_NAME_FIELD from '@salesforce/schema/User.Profile.Name';
 import maskStandardData from '@salesforce/apex/PostRefreshOrgProcessController.maskStandardData'
 import maskCustomData from '@salesforce/apex/PostRefreshOrgProcessController.maskCustomData'
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import getNonSetupObjects from '@salesforce/apex/ObjectDataHelper.getNonSetupObjects';
 import getObjectFields from '@salesforce/apex/ObjectDataHelper.getObjectFields';
 export default class PostRefreshOrgProcess extends LightningElement {
+    isAdmin = false;
+    isLoading = true;
+
+    @wire(getRecord, { recordId: userId, fields: [PROFILE_NAME_FIELD] })
+    wiredUser({ error, data }) {
+        if (data) {
+            this.isAdmin = getFieldValue(data, PROFILE_NAME_FIELD) === 'System Administrator';
+            this.isLoading = false;
+        } else if (error) {
+            this.isAdmin = false;
+            this.isLoading = false;
+        }
+    }
+
+    get showAccessDeniedModal() {
+        return !this.isLoading && !this.isAdmin;
+    }
+
     @track objectOptions = [];
     @track fieldOptions = [];
     @track tilesList = [];

@@ -1,4 +1,34 @@
 <template>
+  <!-- Loading state -->
+  <template if:true={isLoading}>
+    <div class="slds-p-around_xx-large slds-text-align_center">
+      <lightning-spinner alternative-text="Checking permissions..." size="medium"></lightning-spinner>
+    </div>
+  </template>
+
+  <!-- Access denied modal (non-admins) -->
+  <template if:true={showAccessDeniedModal}>
+    <div role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+      <div class="slds-modal__container">
+        <header class="slds-modal__header slds-theme_info">
+          <lightning-icon icon-name="utility:info" variant="inverse" size="small" class="slds-m-right_x-small"></lightning-icon>
+          <h2 class="slds-modal__title slds-has-flexi-truncate">Access Restricted</h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_large slds-text-align_center">
+          <lightning-icon icon-name="utility:lock" size="large" class="slds-m-bottom_medium"></lightning-icon>
+          <p class="slds-text-heading_small slds-m-bottom_x-small">Administrator Access Required</p>
+          <p class="slds-text-body_regular slds-text-color_weak">
+            Only System Administrators can access this application.
+            Please contact your Salesforce administrator for assistance.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+  </template>
+
+  <!-- Main content (System Administrators only) -->
+  <template if:true={isAdmin}>
   <lightning-card icon-name="utility:shield">
     <div slot="title">Post Refresh Data Masking</div>
 
@@ -190,4 +220,5 @@
     </lightning-tabset>
 
   </lightning-card>
+  </template>
 </template>
