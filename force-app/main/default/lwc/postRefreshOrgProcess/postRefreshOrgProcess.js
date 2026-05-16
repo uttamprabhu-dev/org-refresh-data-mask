@@ -11,6 +11,8 @@ export default class PostRefreshOrgProcess extends LightningElement {
     isAdmin = false;
     isLoading = true;
 
+    static MAX_SELECTED_FIELDS = 25;
+
     @wire(getRecord, { recordId: userId, fields: [PROFILE_NAME_FIELD] })
     wiredUser({ error, data }) {
         if (data) {
@@ -26,12 +28,13 @@ export default class PostRefreshOrgProcess extends LightningElement {
         return !this.isLoading && !this.isAdmin;
     }
 
-    @track objectOptions = [];
     @track fieldOptions = [];
     @track tilesList = [];
     @track nextTileId = 1;
     @track selectedObject = '';
     @track currentPage = 1;
+
+    _searchTimers = {};
 
     get totalPages() {
         return this.tilesList.length;
@@ -87,7 +90,7 @@ export default class PostRefreshOrgProcess extends LightningElement {
                 items.push({ label: String(total), value: total, isCurrent: false });
             }
         }
-        
+
         return items.map((item, index) => ({
             ...item,
             key: `page_${index}`,
@@ -158,31 +161,15 @@ export default class PostRefreshOrgProcess extends LightningElement {
             const result = await maskCustomData({ payload: payload });
             if(result.success) {
                 this.dispatchEvent(new ShowToastEvent({
-                    title: "Get Help",
+                    title: "Batch Class has been initialized",
                     message:
-                        "Salesforce documentation is available in the app. Click ? in the upper-right corner.",
+                        "Please check the Apex Jobs for the running batch jobs.",
+                    variant: "info"
                 }));
                 this.clearData();
             }
         } catch (error) {
             console.log('result', error.message);
-        }
-    }
-
-    async handleGetObjects() {
-        try {
-            const result = await getNonSetupObjects();
-            if(result !== null || result.length !== 0) {
-                this.objectOptions = result.map(object => {
-                    return {
-                        ...object,
-                        label: object.label,
-                        value: object.apiName
-                    }
-                })
-            }
-        } catch (error) {
-            console.error()
         }
     }
 
@@ -206,16 +193,18 @@ export default class PostRefreshOrgProcess extends LightningElement {
     }
 
     async handleAddTile() {
-        if(this.tilesList.length === 0) {
-            await this.handleGetObjects();
-        }
         const newTile = {
             id: this.nextTileId,
             object: '',
             objectLabel: '',
             isObjectNotSelected: true,
             fields: [],
-            selectedFieldValues: []
+            selectedFieldValues: [],
+            objectSearchTerm: '',
+            objectSearchResults: [],
+            showObjectDropdown: false,
+            isObjectSearching: false,
+            showNoObjectResults: false
         };
         this.tilesList = [...this.tilesList, newTile];
         this.nextTileId++;
@@ -225,8 +214,12 @@ export default class PostRefreshOrgProcess extends LightningElement {
 
     async handleDeleteTile(event) {
         const tileId = parseInt(event.currentTarget.dataset.tileId, 10);
+        if (this._searchTimers[tileId]) {
+            clearTimeout(this._searchTimers[tileId]);
+            delete this._searchTimers[tileId];
+        }
         this.tilesList = this.tilesList.filter(t => t.id !== tileId);
-        
+
         if (this.tilesList.length === 0) {
             this.clearData();
         } else {
@@ -237,31 +230,104 @@ export default class PostRefreshOrgProcess extends LightningElement {
         }
     }
 
-    async handleObjectChange(event) {
+    handleObjectSearch(event) {
         const tileId = parseInt(event.currentTarget.dataset.tileId, 10);
-        const tile = this.tilesList.find(t => t.id === tileId);
-        const objectApiName = event.detail.value;
+        const searchTerm = event.target.value;
 
-        const existingTile = this.tilesList.find(t => t.id !== tileId && t.object === objectApiName);
-        if (existingTile && objectApiName) {
+        const tile = this.tilesList.find(t => t.id === tileId);
+        if (!tile) return;
+
+        tile.objectSearchTerm = searchTerm;
+        tile.object = '';
+        tile.objectLabel = '';
+        tile.isObjectNotSelected = true;
+        tile.fields = [];
+        tile.selectedFieldValues = [];
+
+        if (!searchTerm || searchTerm.trim().length < 1) {
+            tile.showObjectDropdown = false;
+            tile.objectSearchResults = [];
+            tile.showNoObjectResults = false;
+            this.tilesList = [...this.tilesList];
+            return;
+        }
+
+        tile.isObjectSearching = true;
+        tile.showObjectDropdown = true;
+        tile.showNoObjectResults = false;
+        this.tilesList = [...this.tilesList];
+
+        if (this._searchTimers[tileId]) {
+            clearTimeout(this._searchTimers[tileId]);
+        }
+
+        this._searchTimers[tileId] = setTimeout(async () => {
+            try {
+                const results = await getNonSetupObjects({ searchTerm: searchTerm.trim() });
+                const t = this.tilesList.find(tile => tile.id === tileId);
+                if (t && t.objectSearchTerm === searchTerm) {
+                    t.objectSearchResults = results;
+                    t.isObjectSearching = false;
+                    t.showNoObjectResults = results.length === 0;
+                    this.tilesList = [...this.tilesList];
+                }
+            } catch (error) {
+                const t = this.tilesList.find(tile => tile.id === tileId);
+                if (t) {
+                    t.isObjectSearching = false;
+                    t.objectSearchResults = [];
+                    t.showNoObjectResults = false;
+                    this.tilesList = [...this.tilesList];
+                }
+            }
+        }, 300);
+    }
+
+    handleObjectSearchBlur(event) {
+        const tileId = parseInt(event.currentTarget.dataset.tileId, 10);
+        setTimeout(() => {
+            const tile = this.tilesList.find(t => t.id === tileId);
+            if (tile) {
+                tile.showObjectDropdown = false;
+                if (!tile.object) {
+                    tile.objectSearchTerm = '';
+                    tile.objectSearchResults = [];
+                    tile.showNoObjectResults = false;
+                }
+                this.tilesList = [...this.tilesList];
+            }
+        }, 200);
+    }
+
+    async handleObjectSelect(event) {
+        const tileId = parseInt(event.currentTarget.dataset.tileId, 10);
+        const apiName = event.currentTarget.dataset.apiName;
+        const label = event.currentTarget.dataset.label;
+
+        const existingTile = this.tilesList.find(t => t.id !== tileId && t.object === apiName);
+        if (existingTile) {
             this.dispatchEvent(new ShowToastEvent({
                 title: "Info",
                 message: "This object has already been selected.",
                 variant: "info"
             }));
-            this.tilesList = [...this.tilesList];
             return;
         }
 
+        const tile = this.tilesList.find(t => t.id === tileId);
         if (tile) {
-            tile.object = objectApiName;
-            const selectedOption = this.objectOptions.find(o => o.value === objectApiName);
-            tile.objectLabel = selectedOption ? selectedOption.label : objectApiName;
-            tile.isObjectNotSelected = !objectApiName;
+            tile.object = apiName;
+            tile.objectLabel = label;
+            tile.objectSearchTerm = label;
+            tile.isObjectNotSelected = false;
+            tile.showObjectDropdown = false;
+            tile.objectSearchResults = [];
+            tile.showNoObjectResults = false;
             tile.fields = [];
             tile.selectedFieldValues = [];
-            this.selectedObject = objectApiName;
-            await this.handleFetchObjectFields(objectApiName);
+            this.selectedObject = apiName;
+            this.tilesList = [...this.tilesList];
+            await this.handleFetchObjectFields(apiName);
             this.tilesList = [...this.tilesList];
         }
     }
@@ -269,9 +335,17 @@ export default class PostRefreshOrgProcess extends LightningElement {
     handleFieldChange(event) {
         const tileId = parseInt(event.currentTarget.dataset.tileId, 10);
         const tile = this.tilesList.find(t => t.id === tileId);
-        const selectedValues = event.detail.value;
-        
+        let selectedValues = event.detail.value;
+
         if (tile) {
+            if (selectedValues.length > PostRefreshOrgProcess.MAX_SELECTED_FIELDS) {
+                selectedValues = selectedValues.slice(0, PostRefreshOrgProcess.MAX_SELECTED_FIELDS);
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Field Limit Reached',
+                    message: `You can select a maximum of ${PostRefreshOrgProcess.MAX_SELECTED_FIELDS} fields per object.`,
+                    variant: 'warning'
+                }));
+            }
             tile.selectedFieldValues = selectedValues;
             tile.fields = selectedValues.map(val => {
                 const fieldDef = this.fieldOptions.find(f => f.value === val);
@@ -288,9 +362,11 @@ export default class PostRefreshOrgProcess extends LightningElement {
     handleSelectAllFields(event) {
         const tileId = parseInt(event.currentTarget.dataset.tileId, 10);
         const tile = this.tilesList.find(t => t.id === tileId);
-        
+
         if (tile && this.fieldOptions.length > 0) {
-            const allFieldValues = this.fieldOptions.map(f => f.value);
+            const allFieldValues = this.fieldOptions
+                .map(f => f.value)
+                .slice(0, PostRefreshOrgProcess.MAX_SELECTED_FIELDS);
             tile.selectedFieldValues = allFieldValues;
             tile.fields = allFieldValues.map(val => {
                 const fieldDef = this.fieldOptions.find(f => f.value === val);
@@ -322,11 +398,11 @@ export default class PostRefreshOrgProcess extends LightningElement {
     }
 
     clearData() {
-        // this.objectOptions = [];
         this.fieldOptions = [];
         this.tilesList = [];
         this.nextTileId = 1;
         this.selectedObject = '';
         this.currentPage = 1;
+        this._searchTimers = {};
     }
 }

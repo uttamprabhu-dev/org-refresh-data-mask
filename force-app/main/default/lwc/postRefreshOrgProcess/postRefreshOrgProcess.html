@@ -174,14 +174,49 @@
                 <div class="tile-body">
                   <div class="slds-grid slds-gutters">
                     <div class="slds-col slds-size_4-of-12">
-                      <lightning-combobox
-                        label="Salesforce Object"
-                        placeholder="Select an object..."
-                        value={tile.object}
-                        options={objectOptions}
-                        onchange={handleObjectChange}
-                        data-tile-id={tile.id}
-                      ></lightning-combobox>
+                      <div class="object-search-container">
+                        <div class="slds-form-element">
+                          <label class="slds-form-element__label">Salesforce Object</label>
+                          <div class="slds-form-element__control">
+                            <input
+                              type="text"
+                              class="slds-input"
+                              placeholder="Type to search objects..."
+                              value={tile.objectSearchTerm}
+                              data-tile-id={tile.id}
+                              oninput={handleObjectSearch}
+                              onblur={handleObjectSearchBlur}
+                            />
+                          </div>
+                        </div>
+                        <template if:true={tile.showObjectDropdown}>
+                          <div class="object-dropdown">
+                            <template if:true={tile.isObjectSearching}>
+                              <div class="dropdown-searching">
+                                <lightning-spinner size="x-small" alternative-text="Searching..."></lightning-spinner>
+                              </div>
+                            </template>
+                            <template if:false={tile.isObjectSearching}>
+                              <template for:each={tile.objectSearchResults} for:item="obj">
+                                <div
+                                  key={obj.apiName}
+                                  class="object-dropdown-item"
+                                  data-tile-id={tile.id}
+                                  data-api-name={obj.apiName}
+                                  data-label={obj.label}
+                                  onmousedown={handleObjectSelect}
+                                >
+                                  <span class="obj-label">{obj.label}</span>
+                                  <span class="obj-api-name">{obj.apiName}</span>
+                                </div>
+                              </template>
+                              <template if:true={tile.showNoObjectResults}>
+                                <div class="no-results-msg">No objects found</div>
+                              </template>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
                     </div>
                     <div class="slds-col slds-size_8-of-12">
                       <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_x-small">
