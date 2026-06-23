@@ -17,8 +17,13 @@ public with sharing class PostRefreshOrgProcessController {
     @AuraEnabled
     public static Map<String, Object> maskStandardData(){
         try {
-            Batch_MaskQuoteRecordsDetails b = new Batch_MaskQuoteRecordsDetails(); 
-            Database.executebatch(b);
+            if (Schema.getGlobalDescribe().containsKey('Quote')) {
+                Type batchType = Type.forName('Batch_MaskQuoteRecordsDetails');
+                if (batchType != null) {
+                    Database.Batchable<SObject> b = (Database.Batchable<SObject>) batchType.newInstance();
+                    Database.executeBatch(b);
+                }
+            }
             return new Map<String, Object>{
                 'success' => true,
                 'message' => 'Batch class has been initiated'

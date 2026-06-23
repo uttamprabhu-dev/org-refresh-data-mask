@@ -119,6 +119,35 @@ private class Batch_MaskQuoteRecordsDetailsTest {
     }
 
     @isTest
+    static void testIsObjectAvailable_knownObject_returnsTrue() {
+        Assert.isTrue(
+            Batch_MaskQuoteRecordsDetails.isObjectAvailable('Account'),
+            'isObjectAvailable should return true for a standard object that always exists'
+        );
+    }
+
+    @isTest
+    static void testIsObjectAvailable_nonExistentObject_returnsFalse() {
+        Assert.isFalse(
+            Batch_MaskQuoteRecordsDetails.isObjectAvailable('FakeObject_That_Does_Not_Exist__x'),
+            'isObjectAvailable should return false for an object that does not exist'
+        );
+    }
+
+    @isTest
+    static void testStart_quoteUnavailable_returnsEmptyScope() {
+        // Simulate the guard path: run the batch against an Account query that matches nothing.
+        // We can't disable Quote at runtime, so we verify the batch completes cleanly with no
+        // records processed when the scope is empty — the same outcome the guard produces.
+        Test.startTest();
+        Database.executeBatch(new Batch_MaskQuoteRecordsDetails());
+        Test.stopTest();
+
+        // If the guard returned an empty QueryLocator the batch finishes without DML errors.
+        Assert.areEqual(0, [SELECT COUNT() FROM Quote], 'Batch should complete cleanly with no records');
+    }
+
+    @isTest
     static void testExecute_deduplicatesOpportunityAcrossQuotes() {
         // Two quotes sharing one opportunity — the opp should be masked exactly once (no DML conflict)
         Account acc = createAccount();

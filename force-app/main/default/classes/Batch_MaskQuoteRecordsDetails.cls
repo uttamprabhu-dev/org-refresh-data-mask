@@ -4,9 +4,16 @@ public class Batch_MaskQuoteRecordsDetails implements Database.Batchable<sObject
     private Set<Id> set_idOpprtntyIds = new Set<Id>();
     private Set<Id> set_idAccountIds = new Set<Id>();
 
+    @TestVisible private static Boolean isObjectAvailable(String objectName) {
+        return Schema.getGlobalDescribe().containsKey(objectName);
+    }
+
     public Database.QueryLocator start(Database.BatchableContext bc) {
+        if (!isObjectAvailable('Quote')) {
+            return Database.getQueryLocator('SELECT Id FROM Account WHERE Id = null');
+        }
         return Database.getQueryLocator(
-            'SELECT Id, Name, Email, Phone, Description, ' + 
+            'SELECT Id, Name, Email, Phone, Description, ' +
             'OpportunityId, Opportunity.Name, ' +
             'Opportunity.AccountId, Opportunity.Account.Phone, Opportunity.Account.Website, Opportunity.Account.AccountNumber ' +
             'FROM Quote ' +

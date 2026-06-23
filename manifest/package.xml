@@ -1,36 +1,47 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
-        <members>*</members>
+        <members>RefreshOrg_Utils</members>
+        <members>RefreshOrg_UtilsTest</members>
+
+        <members>Batch_MaskAccountRecordsDetails</members>
+        <members>Batch_MaskAccountRecordsDetailsTest</members>
+        
+        <members>DataMaskHelper</members>
+        <members>DataMaskHelperTest</members>
+
+        <members>Batch_MaskOpportunityRecordsDetails</members>
+        <members>Batch_MaskOpportunityRecordsDetailsTest</members>
+        
+        <members>PostRefreshOrgProcessController</members>
+        <members>PostRefreshOrgProcessControllerTest</members>
+        
+        <members>Batch_MaskObjectRecordsDetails</members>
+        <members>Batch_MaskObjectRecordsDetailsTest</members>
+
+        <members>Batch_MaskQuoteRecordsDetails</members>
+        <members>Batch_MaskQuoteRecordsDetailsTest</members>
+        
+        <members>ObjectDataHelper</members>
+        <members>ObjectDataHelperTest</members>
         <name>ApexClass</name>
     </types>
     <types>
-        <members>*</members>
-        <name>ApexComponent</name>
-    </types>
-    <types>
-        <members>*</members>
-        <name>ApexPage</name>
-    </types>
-    <types>
-        <members>*</members>
-        <name>ApexTestSuite</name>
-    </types>
-    <types>
-        <members>*</members>
-        <name>ApexTrigger</name>
-    </types>
-    <types>
-        <members>*</members>
-        <name>AuraDefinitionBundle</name>
-    </types>
-    <types>
-        <members>*</members>
+        <members>or_customComponent</members>
+        <members>or_standardComponent</members>
         <name>LightningComponentBundle</name>
     </types>
+
+     <types>
+        <members>Standard_Mask</members>
+        <members>Custom_Mask</members>
+        <name>CustomTab</name>
+    </types>
+
+
     <types>
-        <members>*</members>
-        <name>StaticResource</name>
+        <members>Refresh_Org</members> 
+        <name>CustomApplication</name>
     </types>
     
     <version>66.0</version>

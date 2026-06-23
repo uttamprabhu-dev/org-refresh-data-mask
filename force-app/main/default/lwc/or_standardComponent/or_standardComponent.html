@@ -1,0 +1,33 @@
+<template>
+  <div class="slds-p-around_large">
+
+    <div class="slds-media slds-m-bottom_large">
+      <div class="slds-media__figure slds-media__figure_fixed-width slds-align_absolute-center">
+        <lightning-icon icon-name="utility:shield" size="large"></lightning-icon>
+      </div>
+      <div class="slds-media__body">
+        <h2 class="slds-text-heading_medium slds-m-bottom_x-small">Standard Data Masking</h2>
+        <p class="slds-text-body_regular slds-text-color_weak">
+          Applies predefined masking rules to sensitive fields across Account, Opportunity, and Contact records.
+        </p>
+      </div>
+    </div>
+
+    <div class="warning-banner slds-m-bottom_large">
+      <lightning-icon icon-name="utility:warning" size="small" variant="warning"></lightning-icon>
+      <div class="slds-m-left_small">
+        <p class="slds-text-body_regular warning-title">Irreversible Action</p>
+        <p class="slds-text-body_small">This action cannot be undone. All masked data will be permanently altered. Confirm before proceeding.</p>
+      </div>
+    </div>
+
+    <lightning-button
+      variant="destructive"
+      label="Run Standard Masking"
+      icon-name="utility:shield"
+      icon-position="left"
+      onclick={handleMaskData}
+    ></lightning-button>
+
+  </div>
+</template>

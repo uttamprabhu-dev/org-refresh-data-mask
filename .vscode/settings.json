@@ -46,6 +46,7 @@
         "*.sublime-*": true,
         "**/.husky/**": true,
         "**/.sfdx/**": true
-    }
+    },
+    "xml.preferences.showSchemaDocumentationType": "none"
 
 }
