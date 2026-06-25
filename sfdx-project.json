@@ -5,16 +5,19 @@
       "versionNumber": "0.1.0.NEXT",
       "path": "force-app",
       "default": true,
-      "package": "MyRefreshOrg",
-      "versionDescription": ""
+      "package": "RefreshOrg",
+      "versionDescription": "RefreshOrg - Obfsucate sensitive data.",
+      "definitionFile": "config/project-scratch-def.json"
     }
   ],
   "name": "RefreshOrg",
-  "namespace": "",
+  "namespace": "refreshorg",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "66.0",
   "defaultLwcLanguage": "javascript",
   "packageAliases": {
-    "MyRefreshOrg": "0HoQy0000001chZKAQ"
+    "RefreshOrg": "0HogK000000391xSAA",
+    "RefreshOrg@0.1.0-1": "04tgK000000DwB3QAK",
+    "RefreshOrg@0.1.0-2": "04tgK000000DwivQAC"
   }
 }

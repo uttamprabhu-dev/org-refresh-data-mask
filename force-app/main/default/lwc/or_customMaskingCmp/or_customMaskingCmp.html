@@ -1,0 +1,183 @@
+<template>
+    <div class="slds-p-around_medium">
+
+        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_medium">
+            <div>
+            <h2 class="slds-text-heading_medium">Custom Masking</h2>
+            <p class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">Define which objects and fields to mask.</p>
+            </div>
+            <div>
+            <lightning-button
+                variant="neutral"
+                label="Add Object"
+                icon-name="utility:add"
+                icon-position="left"
+                onclick={handleAddTile}
+                class="slds-m-right_x-small"
+            ></lightning-button>
+            <lightning-button
+                variant="brand"
+                label="Run Masking"
+                icon-name="utility:shield"
+                icon-position="left"
+                onclick={handleMaskCustomData}
+                disabled={noTiles}
+            ></lightning-button>
+            </div>
+        </div>
+
+        <template if:false={hasTiles}>
+            <div class="empty-state slds-text-align_center slds-p-around_xx-large">
+            <div class="empty-icon-wrap slds-m-bottom_medium">
+                <lightning-icon icon-name="utility:database" size="large"></lightning-icon>
+            </div>
+            <h3 class="slds-text-heading_small slds-m-bottom_x-small">No Objects Configured</h3>
+            <p class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">
+                Add objects to configure which fields to mask during org refresh.
+            </p>
+            <lightning-button
+                variant="brand"
+                label="Add First Object"
+                icon-name="utility:add"
+                icon-position="left"
+                onclick={handleAddTile}
+            ></lightning-button>
+            </div>
+        </template>
+
+        <template if:true={hasTiles}>
+
+            <div class="pagination-bar slds-m-bottom_medium">
+            <lightning-button-icon
+                icon-name="utility:chevronleft"
+                variant="border"
+                disabled={isFirstPage}
+                onclick={handlePrevious}
+                alternative-text="Previous"
+            ></lightning-button-icon>
+
+            <div class="page-buttons">
+                <template for:each={paginationItems} for:item="item">
+                <template if:true={item.isDots}>
+                    <span key={item.key} class="page-dots">…</span>
+                </template>
+                <template if:false={item.isDots}>
+                    <button key={item.key} class={item.btnClass} data-page={item.value} onclick={handlePageClick}>
+                    {item.label}
+                    </button>
+                </template>
+                </template>
+            </div>
+
+            <lightning-button-icon
+                icon-name="utility:chevronright"
+                variant="border"
+                disabled={isLastPage}
+                onclick={handleNext}
+                alternative-text="Next"
+            ></lightning-button-icon>
+
+            <span class="page-count slds-text-body_small slds-text-color_weak">{currentPage} / {totalPages}</span>
+            </div>
+
+            <template for:each={displayedTiles} for:item="tile">
+            <div key={tile.id} class="tile-card">
+
+                <div class="tile-header slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                <div class="slds-grid slds-grid_vertical-align-center">
+                    <lightning-icon icon-name="utility:database" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+                    <span class="tile-header-label">
+                    <template if:true={tile.object}>{tile.objectLabel}</template>
+                    <template if:false={tile.object}>New Object</template>
+                    </span>
+                </div>
+                <lightning-button-icon
+                    icon-name="utility:delete"
+                    variant="bare-inverse"
+                    alternative-text="Remove"
+                    title="Remove Object"
+                    data-tile-id={tile.id}
+                    onclick={handleDeleteTile}
+                ></lightning-button-icon>
+                </div>
+
+                <div class="tile-body">
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col slds-size_4-of-12">
+                    <div class="object-search-container">
+                        <div class="slds-form-element">
+                        <label class="slds-form-element__label">Salesforce Object</label>
+                        <div class="slds-form-element__control">
+                            <input
+                            type="text"
+                            class="slds-input"
+                            placeholder="Type to search objects..."
+                            value={tile.objectSearchTerm}
+                            data-tile-id={tile.id}
+                            oninput={handleObjectSearch}
+                            onblur={handleObjectSearchBlur}
+                            />
+                        </div>
+                        </div>
+                        <template if:true={tile.showObjectDropdown}>
+                        <div class="object-dropdown">
+                            <template if:true={tile.isObjectSearching}>
+                            <div class="dropdown-searching">
+                                <lightning-spinner size="x-small" alternative-text="Searching..."></lightning-spinner>
+                            </div>
+                            </template>
+                            <template if:false={tile.isObjectSearching}>
+                            <template for:each={tile.objectSearchResults} for:item="obj">
+                                <div
+                                key={obj.apiName}
+                                class="object-dropdown-item"
+                                data-tile-id={tile.id}
+                                data-api-name={obj.apiName}
+                                data-label={obj.label}
+                                onmousedown={handleObjectSelect}
+                                >
+                                <span class="obj-label">{obj.label}</span>
+                                <span class="obj-api-name">{obj.apiName}</span>
+                                </div>
+                            </template>
+                            <template if:true={tile.showNoObjectResults}>
+                                <div class="no-results-msg">No objects found</div>
+                            </template>
+                            </template>
+                        </div>
+                        </template>
+                    </div>
+                    </div>
+                    <div class="slds-col slds-size_8-of-12">
+                    <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_x-small">
+                        <span class="slds-text-body_small slds-text-color_weak">Fields to mask</span>
+                        <lightning-button
+                        label="Select All"
+                        variant="base"
+                        onclick={handleSelectAllFields}
+                        data-tile-id={tile.id}
+                        disabled={tile.isObjectNotSelected}
+                        ></lightning-button>
+                    </div>
+                    <lightning-dual-listbox
+                        name="fields"
+                        label="Fields"
+                        source-label="Available"
+                        selected-label="To Mask"
+                        options={fieldOptions}
+                        value={tile.selectedFieldValues}
+                        onchange={handleFieldChange}
+                        data-tile-id={tile.id}
+                        disabled={tile.isObjectNotSelected}
+                    ></lightning-dual-listbox>
+                    </div>
+                </div>
+                </div>
+
+            </div>
+            </template>
+
+        </template>
+
+        </div>
+</template>

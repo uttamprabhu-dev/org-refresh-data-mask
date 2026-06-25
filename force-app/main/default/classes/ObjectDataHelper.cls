@@ -15,14 +15,9 @@ public with sharing class ObjectDataHelper {
     }
 
     @AuraEnabled(cacheable=true)
-    public static List<SObjectWrapper> getNonSetupObjects(String searchTerm) {
+    public static List<SObjectWrapper> getNonSetupObjects() {
         List<SObjectWrapper> result = new List<SObjectWrapper>();
 
-        if (String.isBlank(searchTerm)) {
-            return result;
-        }
-
-        String lowerSearch = searchTerm.toLowerCase();
         Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();
 
         for (String apiName : globalDescribe.keySet()) {
@@ -34,11 +29,7 @@ public with sharing class ObjectDataHelper {
                 describe.isQueryable()       &&
                 !describe.isDeprecatedAndHidden()
             ) {
-                String objLabel   = describe.getLabel().toLowerCase();
-                String objApiName = describe.getName().toLowerCase();
-                if (objLabel.contains(lowerSearch) || objApiName.contains(lowerSearch)) {
-                    result.add(new SObjectWrapper(describe.getName(), describe.getLabel()));
-                }
+                result.add(new SObjectWrapper(describe.getName(), describe.getLabel()));
             }
         }
 

@@ -43,6 +43,21 @@
         <members>Refresh_Org</members> 
         <name>CustomApplication</name>
     </types>
+
+    <types>
+        <members>Refresh_Org_UtilityBar</members>
+        <name>FlexiPage</name>
+    </types>
+
+    <types>
+        <members>Quote</members>
+        <name>CustomObject</name>
+    </types>
+    
+    <types>
+        <members>Admin</members>
+        <name>Profile</name>
+    </types>
     
     <version>66.0</version>
 </Package>

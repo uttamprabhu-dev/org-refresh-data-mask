@@ -3,6 +3,9 @@
   "edition": "Developer",
   "features": ["EnableSetPasswordInApi"],
   "settings": {
+    "quoteSettings": {
+      "enableQuote": true
+    },
     "lightningExperienceSettings": {
       "enableS1DesktopEnabled": true
     },
