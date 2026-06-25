@@ -2,7 +2,7 @@
 
 ## What This Project Does
 
-**RefreshOrg** is a Salesforce 2GP managed package (namespace: `refreshorg`) that masks sensitive data after a sandbox refresh or org clone. It prevents developers/QA from accessing real production data. Admins trigger masking via a Lightning app with two modes: **Standard** (fixed batch chain for Quote → Opportunity → Account) and **Custom** (user-picks any object + Email/Phone fields).
+**RefreshOrg** is a Salesforce 2GP managed package (namespace: `refreshorg`) that masks or redacts sensitive data after a sandbox refresh or org clone. It prevents developers/QA from accessing real production data. Admins trigger operations via a Lightning app with three modes: **Standard** (fixed batch chain for Quote → Opportunity → Account), **Custom Masking** (user-picks any object + Email/Phone fields), and **Custom Redaction** (user-picks any object + fields with per-field character range configuration).
 
 ---
 
@@ -24,7 +24,7 @@
 ```
 force-app/main/default/
   classes/          — 8 production classes + 8 test classes
-  lwc/              — 3 LWC components
+  lwc/              — 4 LWC components
   objects/          — Quote object config
   tabs/             — Standard_Mask, Custom_Mask
   applications/     — Refresh_Org Lightning app
@@ -64,9 +64,10 @@ All three implement `Database.Stateful` and track processed IDs in `Set<Id>` fie
 
 | Component | Purpose |
 |---|---|
-| `postRefreshOrgProcess` | Main container. Admin-only guard (checks System Administrator profile via `@wire`). Hosts the two-tab layout. |
+| `postRefreshOrgProcess` | Main container. Admin-only guard (checks System Administrator profile via `@wire`). Hosts the tab layout. |
 | `or_standardComponent` | "Standard Masking" tab. One button → calls `maskStandardData()`. |
 | `or_customComponent` | "Custom Masking" tab. Object search (300ms debounce), field selection (dual-listbox, max 25 fields/object), paginated tile UI, calls `maskCustomData()`. |
+| `or_customRedactionCmp` | "Custom Redaction" tab. Same paginated tile + object search pattern as masking. Each tile has three stacked rows: (1) object search dropdown, (2) dual-listbox to pick fields ("To Redact", max 25), (3) per-field character range section — one row per selected field with "From character" / "To character" number inputs (max 2 digits each) and an individual save button that stores `{ fieldApiName, fieldDataType, fromChar, toChar }`. Apex redaction method is a TODO stub. |
 
 ---
 
@@ -148,7 +149,11 @@ Lightning App (Admin only)
   │                 └── Batch_MaskOpportunityRecordsDetails
   │                       └── Batch_MaskAccountRecordsDetails
   │
-  └── Custom Masking tab (or_customComponent)
-        └── PostRefreshOrgProcessController.maskCustomData(payload)
-              └── Batch_MaskObjectRecordsDetails (chained per object)
+  ├── Custom Masking tab (or_customComponent)
+  │     └── PostRefreshOrgProcessController.maskCustomData(payload)
+  │           └── Batch_MaskObjectRecordsDetails (chained per object)
+  │
+  └── Custom Redaction tab (or_customRedactionCmp)
+        └── [TODO: Apex redaction method]
+              payload shape: [{ objectApiName, fields: [{ fieldApiName, fieldDataType, fromChar, toChar }] }]
 ```
