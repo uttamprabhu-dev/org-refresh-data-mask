@@ -2,158 +2,112 @@
 
 ## What This Project Does
 
-**RefreshOrg** is a Salesforce 2GP managed package (namespace: `refreshorg`) that masks or redacts sensitive data after a sandbox refresh or org clone. It prevents developers/QA from accessing real production data. Admins trigger operations via a Lightning app with three modes: **Standard** (fixed batch chain for Quote → Opportunity → Account), **Custom Masking** (user-picks any object + Email/Phone fields), and **Custom Redaction** (user-picks any object + fields with per-field character range configuration).
+**RefreshOrg** is a Salesforce 2GP managed package (namespace: `refreshorg`) that masks or redacts sensitive data after a sandbox refresh or org clone. It prevents developers/QA from accessing real production data. Admins trigger operations via a Lightning app with three modes: **Standard** (fixed batch chain for Opportunity → Account), **Custom Masking** (user-picks any object + Email/Phone fields), and **Custom Redaction** (user-picks any object + fields with per-field character range configuration).
 
 ---
 
 ## Package Info
 
-| Key | Value |
-|---|---|
-| Package ID | `0HogK000000391xSAA` |
-| Namespace | `refreshorg` |
-| Version | `0.1.0.NEXT` |
-| API Version | `66.0` |
-| Dev Hub alias | `RefOrg_DevHub` |
-| Package type | Managed |
+- **Package name:** RefreshOrg
+- **Namespace:** `refreshorg`
+- **Package ID:** `0HogK000000391xSAA`
+- **Source API version:** 66.0
+- **Type:** Salesforce 2GP (second-generation managed package)
+- **Latest versions:** `RefreshOrg@0.1.0-1`, `RefreshOrg@0.1.0-2`
 
 ---
 
-## Project Structure
+## Architecture
 
-```
-force-app/main/default/
-  classes/          — 8 production classes + 8 test classes
-  lwc/              — 4 LWC components
-  objects/          — Quote object config
-  tabs/             — Standard_Mask, Custom_Mask
-  applications/     — Refresh_Org Lightning app
-  flexipages/       — Refresh_Org_UtilityBar
-config/
-  project-scratch-def.json   — Scratch org definition (Quotes enabled)
-```
+### Three Operation Modes
+
+| Mode | Trigger | Objects | Fields | Batch Class |
+|------|---------|---------|--------|-------------|
+| Standard | `maskStandardData()` | Opportunity → Account (hardcoded) | Name, Phone, Website, AccountNumber | `Batch_MaskOpportunityRecordsDetails` → chains `Batch_MaskAccountRecordsDetails` |
+| Custom Masking | `maskCustomData(payload)` | Any user-selected object | Email and Phone fields only | `Batch_MaskObjectRecordsDetails` |
+| Custom Redaction | `redactCustomData(payload)` | Any user-selected object | Email, Phone, and String fields | `Batch_RedactObjectRecordDetails` |
+
+### Masking vs Redaction
+
+- **Masking** replaces the entire field value with randomly generated data (e.g., `(555) 123-4567`, `abc123@gmail.com`).
+- **Redaction** replaces a user-specified character range (1-based, alphanumeric positions only) with asterisks while preserving special characters like dashes, parentheses, and `@domain`.
+
+### Batch Chaining Pattern
+
+`Batch_MaskObjectRecordsDetails` and `Batch_RedactObjectRecordDetails` both accept a `List<MaskingPayload>` and process one object per batch run. In `finish()`, they remove the first element and re-enqueue themselves with the remaining payload — processing each object sequentially.
 
 ---
 
 ## Key Classes
 
-### Helper / Utility
-- **`DataMaskHelper`** — Generates fake phone, email, URL, credit card, account number, random strings. Single source of truth for all random data.
-- **`RefreshOrg_Utils`** — Schema introspection: `isEditableField()`, `isSensitiveField()`, `getFieldTypes()`. Used to filter which fields can be masked.
-- **`ObjectDataHelper`** — `@AuraEnabled` methods for LWC: `getNonSetupObjects()`, `getObjectFields()`. Surfaces maskable objects/fields to the UI.
+### `PostRefreshOrgProcessController`
+Main Apex controller exposing `@AuraEnabled` methods to LWC components.
+- `maskStandardData()` — kicks off the standard Opp → Account batch chain.
+- `maskCustomData(payload)` — kicks off `Batch_MaskObjectRecordsDetails` with a user-built payload.
+- `redactCustomData(payload)` — kicks off `Batch_RedactObjectRecordDetails` with a user-built payload.
+- Inner classes: `MaskingPayload` (objectApiName + List\<FieldData\>), `FieldData` (fieldApiName, fieldDataType, fromChar, toChar).
 
-### Orchestrator
-- **`PostRefreshOrgProcessController`** — Two `@AuraEnabled` entry points:
-  - `maskStandardData()` — kicks off `Batch_MaskQuoteRecordsDetails`
-  - `maskCustomData(payload)` — kicks off `Batch_MaskObjectRecordsDetails` with user-selected fields
+### `ObjectDataHelper`
+Utility controller for object/field metadata queries.
+- `getNonSetupObjects()` — returns all queryable, non-custom-setting objects (sorted by label). Used to populate the object search in Custom Masking/Redaction UIs.
+- `getObjectFields(objectApiName, operationType)` — returns accessible fields filtered by `RefreshOrg_Utils.isSensitiveField()`. The `operationType` string (`'custom-masking'` or `'custom-redaction'`) controls which field types are returned.
 
-### Batch Chain (Standard Masking)
-Runs in sequence via `finish()` chaining:
-1. **`Batch_MaskQuoteRecordsDetails`** — Masks Quote (`Name`, `Email`, `Phone`, `Description`), plus related Opportunity (`Name`) and Account (`Phone`, `Website`, `AccountNumber`). Chains to step 2.
-2. **`Batch_MaskOpportunityRecordsDetails`** — Masks remaining Opportunities and their Accounts. Chains to step 3.
-3. **`Batch_MaskAccountRecordsDetails`** — Masks remaining Accounts not touched by prior batches.
+### `RefreshOrg_Utils`
+Shared constants and helpers.
+- `MASK_OPERATION_TYPE = 'custom-masking'` / `REDACTION_OPERATION_TYPE = 'custom-redaction'`
+- Custom masking allows: `EMAIL`, `PHONE`
+- Custom redaction allows: `EMAIL`, `PHONE`, `STRING`
+- `isSensitiveField()` checks field type against the allowed list for the given operation type.
+- `isEditableField()` excludes formula, auto-number, lookup, and roll-up summary fields.
 
-All three implement `Database.Stateful` and track processed IDs in `Set<Id>` fields to avoid duplicate DML across batch chunks.
+### `DataMaskHelper`
+Pure utility class with static methods for generating masked/redacted values.
+- `generate_randomPhoneNumber()` → `(XXX) XXX-XXXX`
+- `generate_randomEmail()` → 8-char alphanumeric username + random domain
+- `generate_randomUrl()`, `generate_randomCreditCardNumber()`, `generate_randomAccountNumber()`
+- `generateRedactedPhoneValue(value, fromChar, toChar)` — replaces alphanumeric chars at 1-based positions `fromChar`–`toChar` with `*`, preserving special characters
+- `generateRedactedEmailValue(value, fromChar, toChar)` — same but only applies to the local part (before `@`), domain is always preserved
 
-### Generic Batch (Custom Masking)
-- **`Batch_MaskObjectRecordsDetails`** — Accepts a `MaskingPayload` (object API name + list of fields). Dynamically builds SOQL, masks EMAIL→random email and PHONE→random phone. Chains additional payloads in `finish()`.
+### Standard Batch Classes
+- `Batch_MaskOpportunityRecordsDetails` — updates Opp `Name`, and related Account `Phone`/`Website`/`AccountNumber`. Chains to `Batch_MaskAccountRecordsDetails` in `finish()` passing already-updated Account IDs to skip duplicates.
+- `Batch_MaskAccountRecordsDetails` — updates Account `Name`, `Phone`, `Website`, `AccountNumber` for records NOT in the passed ID set.
 
 ---
 
 ## LWC Components
 
-| Component | Purpose |
-|---|---|
-| `postRefreshOrgProcess` | Main container. Admin-only guard (checks System Administrator profile via `@wire`). Hosts the tab layout. |
-| `or_standardComponent` | "Standard Masking" tab. One button → calls `maskStandardData()`. |
-| `or_customComponent` | "Custom Masking" tab. Object search (300ms debounce), field selection (dual-listbox, max 25 fields/object), paginated tile UI, calls `maskCustomData()`. |
-| `or_customRedactionCmp` | "Custom Redaction" tab. Same paginated tile + object search pattern as masking. Each tile has three stacked rows: (1) object search dropdown, (2) dual-listbox to pick fields ("To Redact", max 25), (3) per-field character range section — one row per selected field with "From character" / "To character" number inputs (max 2 digits each) and an individual save button that stores `{ fieldApiName, fieldDataType, fromChar, toChar }`. Apex redaction method is a TODO stub. |
+| Component | Role |
+|-----------|------|
+| `postRefreshOrgProcess` | Top-level app/tab container |
+| `or_standardComponent` | Standard mode UI — single button triggers `maskStandardData()` |
+| `or_customMaskingCmp` | Custom masking UI — object/field picker tiles, calls `maskCustomData()` |
+| `or_customRedactionCmp` | Custom redaction UI — object/field picker tiles with per-field char range inputs, calls `redactCustomData()` |
+| `or_customComponent` | Parent wrapper for the redaction tab; passes `redactionCriteria` config (per-type fromChar/toChar defaults) as `@api` to `or_customRedactionCmp` |
+
+### Tile/Pagination Pattern (Custom Masking & Redaction)
+Both custom components use the same "tiles" pattern:
+- Each tile represents one object + its selected fields.
+- Only one tile is displayed at a time (paginated by tile index).
+- Object search uses a 300ms debounced typeahead backed by a cached `getNonSetupObjects()` call.
+- Max 25 fields per tile (`MAX_SELECTED_FIELDS = 25`).
+- Duplicate object selection across tiles is blocked with a toast warning.
 
 ---
 
-## Common CLI Commands
+## Field Type Handling
 
-### Package version create
-```bash
-sf package version create \
-  --package RefreshOrg \
-  --installation-key-bypass \
-  --code-coverage \
-  --wait 20 \
-  --target-dev-hub RefOrg_DevHub
-```
-
-### Create scratch org
-```bash
-sf org create scratch \
-  --definition-file config/project-scratch-def.json \
-  --target-dev-hub RefOrg_DevHub \
-  --alias RefreshOrg_Scratch \
-  --duration-days 7
-```
-
-### Deploy to scratch org
-```bash
-sf project deploy start --target-org RefreshOrg_Scratch
-```
-
-### Run tests
-```bash
-sf apex run test --target-org RefreshOrg_Scratch --code-coverage --result-format human
-```
-
-### List package versions
-```bash
-sf package version list --package RefreshOrg --target-dev-hub RefOrg_DevHub
-```
-
-### Install a package version
-```bash
-sf package install --package <04t_VERSION_ID> --target-org <ORG_ALIAS> --wait 10
-```
+| Display Type | Custom Masking | Custom Redaction | Standard |
+|---|---|---|---|
+| EMAIL | Replace with random email | Asterisk range in local part | — |
+| PHONE | Replace with `(XXX) XXX-XXXX` | Asterisk range over alphanumeric chars | Account.Phone |
+| STRING | — | Asterisk range (full value) | — |
+| Name/Website/AccountNumber | — | — | Random alphanumeric/URL |
 
 ---
 
-## Scratch Org Requirements
+## Development Notes
 
-The scratch org definition (`config/project-scratch-def.json`) must include:
-
-```json
-"settings": {
-  "quoteSettings": { "enableQuote": true }
-}
-```
-
-Without this, the Apex compiler cannot resolve the `Quote` SObject and all `Batch_MaskQuoteRecords*` classes fail with `Invalid type: Quote`.
-
----
-
-## Known Gotchas
-
-- **`packageDirectories` must not be empty** in `sfdx-project.json`. The single entry must have `"default": true`. If this gets wiped (e.g. by a CLI command), restore it manually — the package ID lives in `packageAliases` and should not be re-created.
-- **Do not run `sf package create` again** — the package already exists (`0HogK000000391xSAA`). That command will return `DUPLICATE_VALUE`.
-- **Namespace must be linked to Dev Hub** before `sf package create` or `sf package version create` will work. The namespace `refreshorg` must be registered in a separate Developer Edition org and linked via Setup → Namespace Registries in the Dev Hub org.
-- **Dev Hub org cannot own the namespace** — once Dev Hub is enabled on an org, namespace registration is disabled on that same org. Use a second DE org for namespace registration.
-- **`Quote` is only available in standard masking** — the `Batch_MaskQuoteRecordsDetails` class has a runtime guard (`isObjectAvailable('Quote')`) that returns an empty query locator if Quotes are not enabled, so it degrades gracefully in orgs where the feature is off.
-
----
-
-## Architecture — Data Flow
-
-```
-Lightning App (Admin only)
-  │
-  ├── Standard Masking tab (or_standardComponent)
-  │     └── PostRefreshOrgProcessController.maskStandardData()
-  │           └── Batch_MaskQuoteRecordsDetails
-  │                 └── Batch_MaskOpportunityRecordsDetails
-  │                       └── Batch_MaskAccountRecordsDetails
-  │
-  ├── Custom Masking tab (or_customComponent)
-  │     └── PostRefreshOrgProcessController.maskCustomData(payload)
-  │           └── Batch_MaskObjectRecordsDetails (chained per object)
-  │
-  └── Custom Redaction tab (or_customRedactionCmp)
-        └── [TODO: Apex redaction method]
-              payload shape: [{ objectApiName, fields: [{ fieldApiName, fieldDataType, fromChar, toChar }] }]
-```
+- All batch DML uses `Database.update(list, false)` (partial success, errors logged via `System.debug`).
+- `generateRedactedPhoneValue` / `generateRedactedEmailValue` return `null` if: input is blank, already contains `*`, char indices are out of bounds, or fromChar > toChar.
+- `ObjectDataHelper.getNonSetupObjects()` is marked `cacheable=true`; `getObjectFields()` is not (different results per operation type).
+- The `list_fieldLabelKeywords` list in `RefreshOrg_Utils` is currently empty — keyword-based sensitive field detection is a placeholder for future use.

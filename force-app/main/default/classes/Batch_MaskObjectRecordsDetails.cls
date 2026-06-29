@@ -42,7 +42,14 @@ global class Batch_MaskObjectRecordsDetails implements Database.Batchable<SObjec
         }
         // 5. Single DML statement for all records
         if (!list_recordsToUpdate.isEmpty()) {
-            update list_recordsToUpdate;
+            Database.SaveResult[] results = Database.update(list_recordsToUpdate, false);
+            for (Database.SaveResult sr : results) {
+                if (!sr.isSuccess()) {
+                    for (Database.Error err : sr.getErrors()) {
+                        System.debug(LoggingLevel.ERROR, 'Update Error: ' + err.getStatusCode() + ' - ' + err.getMessage());
+                    }
+                }
+            }
         }
     }
     

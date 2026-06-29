@@ -150,7 +150,7 @@ export default class Or_customMaskingCmp extends LightningElement {
 
     async handleFetchObjectFields(objectApiName) {
         try {
-            const result = await getObjectFields({ objectApiName: objectApiName });
+            const result = await getObjectFields({ objectApiName: objectApiName, operationType: 'custom-masking' });
             console.log('result: ', result);
             if (result !== null || result.length !== 0) {
                 this.fieldOptions = result.map(field => {

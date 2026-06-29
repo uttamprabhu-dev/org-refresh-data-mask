@@ -1,10 +1,12 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, track, api } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getNonSetupObjects from '@salesforce/apex/ObjectDataHelper.getNonSetupObjects';
 import getObjectFields from '@salesforce/apex/ObjectDataHelper.getObjectFields';
 import redactCustomData from '@salesforce/apex/PostRefreshOrgProcessController.redactCustomData';
 
 export default class Or_customRedactionCmp extends LightningElement {
+
+    @api redactionCriteria;
     static MAX_SELECTED_FIELDS = 25;
 
     @track fieldOptions = [];
@@ -161,7 +163,7 @@ export default class Or_customRedactionCmp extends LightningElement {
 
     async handleFetchObjectFields(objectApiName) {
         try {
-            const result = await getObjectFields({ objectApiName: objectApiName });
+            const result = await getObjectFields({ objectApiName: objectApiName, operationType: 'custom-redaction' });
             if (result !== null || result.length !== 0) {
                 this.fieldOptions = result.map(field => ({
                     ...field,

@@ -88,7 +88,7 @@ private class ObjectDataHelperTest {
     @isTest
     static void testGetObjectFields_contact_returnsOnlySensitiveFields() {
         List<ObjectDataHelper.FieldWrapper> result =
-            ObjectDataHelper.getObjectFields('Contact');
+            ObjectDataHelper.getObjectFields('Contact', RefreshOrg_Utils.MASK_OPERATION_TYPE);
 
         Assert.isNotNull(result);
         Assert.isTrue(result.size() > 0, 'Contact has Email and Phone fields — list should not be empty');
@@ -103,7 +103,7 @@ private class ObjectDataHelperTest {
     @isTest
     static void testGetObjectFields_contact_containsEmailAndPhoneFields() {
         List<ObjectDataHelper.FieldWrapper> result =
-            ObjectDataHelper.getObjectFields('Contact');
+            ObjectDataHelper.getObjectFields('Contact', RefreshOrg_Utils.MASK_OPERATION_TYPE);
 
         Set<String> apiNames = new Set<String>();
         for (ObjectDataHelper.FieldWrapper fw : result) {
@@ -117,7 +117,7 @@ private class ObjectDataHelperTest {
     @isTest
     static void testGetObjectFields_isSortedByLabel() {
         List<ObjectDataHelper.FieldWrapper> result =
-            ObjectDataHelper.getObjectFields('Contact');
+            ObjectDataHelper.getObjectFields('Contact', RefreshOrg_Utils.MASK_OPERATION_TYPE);
 
         for (Integer i = 0; i < result.size() - 1; i++) {
             Assert.isTrue(
@@ -133,7 +133,7 @@ private class ObjectDataHelperTest {
         String expectedMsg = 'Invalid object API name: ' + invalidName;
 
         try {
-            ObjectDataHelper.getObjectFields(invalidName);
+            ObjectDataHelper.getObjectFields(invalidName, RefreshOrg_Utils.MASK_OPERATION_TYPE);
             Assert.fail('Expected AuraHandledException was not thrown');
         } catch (AuraHandledException e) {
             Assert.areEqual(expectedMsg, e.getMessage(), 'Exception message should identify the bad API name');
@@ -143,7 +143,7 @@ private class ObjectDataHelperTest {
     @isTest
     static void testGetObjectFields_nullObjectName_throwsAuraHandledException() {
         try {
-            ObjectDataHelper.getObjectFields(null);
+            ObjectDataHelper.getObjectFields(null, RefreshOrg_Utils.MASK_OPERATION_TYPE);
             Assert.fail('Expected AuraHandledException was not thrown');
         } catch (AuraHandledException e) {
             Assert.areEqual('Invalid object API name: null', e.getMessage(),
@@ -154,7 +154,7 @@ private class ObjectDataHelperTest {
     @isTest
     static void testGetObjectFields_blankObjectName_throwsAuraHandledException() {
         try {
-            ObjectDataHelper.getObjectFields('');
+            ObjectDataHelper.getObjectFields('', RefreshOrg_Utils.MASK_OPERATION_TYPE);
             Assert.fail('Expected AuraHandledException was not thrown');
         } catch (AuraHandledException e) {
             Assert.areEqual('Invalid object API name: ', e.getMessage(),

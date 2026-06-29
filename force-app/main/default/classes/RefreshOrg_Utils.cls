@@ -1,5 +1,20 @@
 public with sharing class RefreshOrg_Utils {
 
+    
+    public static final String MASK_OPERATION_TYPE = 'custom-masking';
+    public static final String REDACTION_OPERATION_TYPE = 'custom-redaction';
+    
+    private static final List<Schema.DisplayType> list_customMaskableFieldTypes = new List<Schema.DisplayType> { 
+        Schema.DisplayType.EMAIL,
+        Schema.DisplayType.PHONE
+    };
+
+    private static final List<Schema.DisplayType> list_customRedactableFieldTypes = new List<Schema.DisplayType> { 
+        Schema.DisplayType.EMAIL,
+        Schema.DisplayType.PHONE,
+        Schema.DisplayType.STRING
+    };
+
     public static List<String> list_fieldLabelKeywords = new List<String>{
     };
 
@@ -23,9 +38,18 @@ public with sharing class RefreshOrg_Utils {
         return true;
     }
 
-    public static Boolean isSensitiveField(Schema.DescribeFieldResult field) {
-        if(field.getType() == Schema.DisplayType.EMAIL) return true;
-        if(field.getType() == Schema.DisplayType.PHONE) return true;
+    public static Boolean isSensitiveField(Schema.DescribeFieldResult field, String operationTypeStr) {
+        List<Schema.DisplayType> allowedTypes;
+        if (operationTypeStr == MASK_OPERATION_TYPE) {
+            allowedTypes = list_customMaskableFieldTypes;
+        } else if (operationTypeStr == REDACTION_OPERATION_TYPE) {
+            allowedTypes = list_customRedactableFieldTypes;
+        } else {
+            return false;
+        }
+
+        if (allowedTypes.contains(field.getType())) return true;
+
         List<String> labelWords = field.getLabel().toLowerCase().split('[^a-z0-9]+');
         Set<String> labelWordSet = new Set<String>(labelWords);
         for (String keyword : list_fieldLabelKeywords) {

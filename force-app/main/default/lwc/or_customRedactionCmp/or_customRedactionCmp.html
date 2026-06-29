@@ -176,60 +176,78 @@
                                 <div class="slds-col slds-size_1-of-1">
                                     <div class="field-chars-section">
                                         <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">Character range per field</p>
-                                        <template for:each={tile.fields} for:item="field">
-                                            <div key={field.value} class="field-char-row">
-                                                <span class="field-char-label" title={field.displayLabel}>{field.displayLabel}</span>
-                                                <div class="field-char-inputs">
-                                                    <div class="char-input-wrap">
-                                                        <label class="char-input-label">From character</label>
-                                                        <input
-                                                            type="number"
-                                                            class="slds-input char-input"
-                                                            min="0"
-                                                            max="99"
-                                                            placeholder="0"
-                                                            value={field.fromChar}
-                                                            data-tile-id={tile.id}
-                                                            data-field-api-name={field.value}
-                                                            data-char-type="from"
-                                                            oninput={handleCharInput}
-                                                        />
-                                                    </div>
-                                                    <div class="char-input-wrap">
-                                                        <label class="char-input-label">To character</label>
-                                                        <input
-                                                            type="number"
-                                                            class="slds-input char-input"
-                                                            min="0"
-                                                            max="99"
-                                                            placeholder="0"
-                                                            value={field.toChar}
-                                                            data-tile-id={tile.id}
-                                                            data-field-api-name={field.value}
-                                                            data-char-type="to"
-                                                            oninput={handleCharInput}
-                                                        />
-                                                    </div>
-                                                    <lightning-button-icon
-                                                        icon-name="utility:save"
-                                                        variant="brand"
-                                                        alternative-text="Save"
-                                                        title="Save field config"
-                                                        data-tile-id={tile.id}
-                                                        data-field-api-name={field.value}
-                                                        onclick={handleSaveFieldChars}
-                                                        class="char-save-btn"
-                                                    ></lightning-button-icon>
-                                                    <template if:true={field.isSaved}>
-                                                        <lightning-icon
-                                                            icon-name="utility:check"
-                                                            size="xx-small"
-                                                            class="char-saved-icon"
-                                                        ></lightning-icon>
-                                                    </template>
-                                                </div>
-                                            </div>
-                                        </template>
+                                        <table class="slds-table slds-table_bordered slds-table_cell-buffer field-chars-table">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" class="slds-text-title_caps slds-size_1-of-4">Label</th>
+                                                    <th scope="col" class="slds-text-title_caps slds-size_1-of-4">Type</th>
+                                                    <th scope="col" class="slds-text-title_caps slds-size_2-of-4">Inputs</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template for:each={tile.fields} for:item="field">
+                                                    <tr key={field.value}>
+                                                        <td class="slds-cell-wrap" data-label="Label">
+                                                            <span class="field-char-label" title={field.displayLabel}>{field.displayLabel}</span>
+                                                        </td>
+                                                        <td class="slds-cell-wrap" data-label="Type">
+                                                            <span class="slds-badge slds-badge_lightest field-type-badge">{field.dataType}</span>
+                                                        </td>
+                                                        <td data-label="Inputs">
+                                                            <div class="field-char-inputs">
+                                                                <div class="char-input-wrap">
+                                                                    <label class="char-input-label">From character</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        class="slds-input char-input"
+                                                                        min="0"
+                                                                        max="99"
+                                                                        placeholder="0"
+                                                                        value={field.fromChar}
+                                                                        data-tile-id={tile.id}
+                                                                        data-field-api-name={field.value}
+                                                                        data-char-type="from"
+                                                                        oninput={handleCharInput}
+                                                                    />
+                                                                </div>
+                                                                <div class="char-input-wrap">
+                                                                    <label class="char-input-label">To character</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        class="slds-input char-input"
+                                                                        min="0"
+                                                                        max="99"
+                                                                        placeholder="0"
+                                                                        value={field.toChar}
+                                                                        data-tile-id={tile.id}
+                                                                        data-field-api-name={field.value}
+                                                                        data-char-type="to"
+                                                                        oninput={handleCharInput}
+                                                                    />
+                                                                </div>
+                                                                <lightning-button-icon
+                                                                    icon-name="utility:save"
+                                                                    variant="brand"
+                                                                    alternative-text="Save"
+                                                                    title="Save field config"
+                                                                    data-tile-id={tile.id}
+                                                                    data-field-api-name={field.value}
+                                                                    onclick={handleSaveFieldChars}
+                                                                    class="char-save-btn"
+                                                                ></lightning-button-icon>
+                                                                <template if:true={field.isSaved}>
+                                                                    <lightning-icon
+                                                                        icon-name="utility:check"
+                                                                        size="xx-small"
+                                                                        class="char-saved-icon"
+                                                                    ></lightning-icon>
+                                                                </template>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </template>

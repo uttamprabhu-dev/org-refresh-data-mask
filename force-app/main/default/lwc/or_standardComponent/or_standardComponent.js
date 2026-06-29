@@ -8,8 +8,8 @@ export default class Or_standardComponent extends LightningElement {
             const result = await maskStandardData();
             if (result.success) {
                 this.dispatchEvent(new ShowToastEvent({
-                    title: "Get Help",
-                    message: "Salesforce documentation is available in the app. Click ? in the upper-right corner.",
+                    title: "Batch class scheduled",
+                    message: "Open the 'Setup -> Apex' Jobs for checking their status.",
                 }));
             }
         } catch (error) {

@@ -38,9 +38,18 @@ public class Batch_RedactObjectRecordDetails implements Database.Batchable<SObje
                         Integer redactionFromChar = map_apiNameToCharCount.get(fieldApiName).fromChar;
                         Integer redactionToChar = map_apiNameToCharCount.get(fieldApiName).toChar;
                         String fieldValue = (String)record.get(fieldApiName);
-                        String redactedValue = DataMaskHelper.generateRedactedValue(fieldValue, redactionFromChar, redactionToChar) == null? '' : DataMaskHelper.generateRedactedValue(fieldValue, redactionFromChar, redactionToChar);
-                        if(redactedValue != '') {
-                            record.put(fieldApiName, redactedValue);
+                        String phoneRedactedValue = DataMaskHelper.generateRedactedPhoneValue(fieldValue, redactionFromChar, redactionToChar);
+                        if(phoneRedactedValue != '' || phoneRedactedValue != null) {
+                            record.put(fieldApiName, phoneRedactedValue);
+                        }
+                    } else if (map_apiNameToDisplayType.get(fieldApiName) == Schema.DisplayType.Email) {
+                        System.debug('Email type field');
+                        Integer redactionFromChar = map_apiNameToCharCount.get(fieldApiName).fromChar;
+                        Integer redactionToChar = map_apiNameToCharCount.get(fieldApiName).toChar;
+                        String fieldValue = (String)record.get(fieldApiName);
+                        String emailRedactedValue = DataMaskHelper.generateRedactedEmailValue(fieldValue, redactionFromChar, redactionToChar);
+                        if(emailRedactedValue != '' || emailRedactedValue != null) {
+                            record.put(fieldApiName, emailRedactedValue);
                         }
                     }
                 }
@@ -49,7 +58,28 @@ public class Batch_RedactObjectRecordDetails implements Database.Batchable<SObje
         }
         // 5. Single DML statement for all records
         if (!list_recordsToUpdate.isEmpty()) {
-            update list_recordsToUpdate;
+            Database.SaveResult[] list_updatedRecords = Database.update(list_recordsToUpdate, false);
+            for (Integer i = 0; i < list_updatedRecords.size(); i++) {
+                Database.SaveResult sr = list_updatedRecords[i];
+                
+                if (sr.isSuccess()) {
+                    // --- SUCCESS SCENARIO ---
+                    // sr.getId() gives you the ID of the successfully processed record
+                    System.debug('Success: Record processed successfully. ID: ' + sr.getId());
+                    
+                } else {
+                    // --- FAILURE SCENARIO ---
+                    // If you need to know WHICH record failed from your original list:
+                    SObject failedRecord = list_recordsToUpdate.get(i); 
+                    System.debug('Failure: Record failed to save. Source Record Name: ' + failedRecord);
+                    
+                    for(Database.Error err : sr.getErrors()) {
+                        System.debug('Error Status Code: ' + err.getStatusCode());
+                        System.debug('Error Message: ' + err.getMessage());
+                        System.debug('Fields that caused the error: ' + err.getFields());
+                    }
+                }
+            }
         }
     }
 

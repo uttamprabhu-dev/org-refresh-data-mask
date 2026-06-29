@@ -56,7 +56,7 @@ public with sharing class ObjectDataHelper {
     }
 
     @AuraEnabled
-    public static List<FieldWrapper> getObjectFields(String objectApiName) {
+    public static List<FieldWrapper> getObjectFields(String objectApiName, String operationType) {
         try {
             List<FieldWrapper> result = new List<FieldWrapper>();
 
@@ -75,7 +75,7 @@ public with sharing class ObjectDataHelper {
             for (String fieldApiName : fieldMap.keySet()) {
                 Schema.DescribeFieldResult field =
                     fieldMap.get(fieldApiName).getDescribe();
-                Boolean blnIsSensitive = RefreshOrg_Utils.isSensitiveField(field);
+                Boolean blnIsSensitive = RefreshOrg_Utils.isSensitiveField(field, operationType);
                 if (field.isAccessible() && blnIsSensitive) {
                     result.add(new FieldWrapper(
                         field.getName(),

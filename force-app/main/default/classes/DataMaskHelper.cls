@@ -4,6 +4,8 @@ public with sharing class DataMaskHelper {
     public static final String NUMERIC = '0123456789';
     public static final String ALPHANUMERIC = ALPHA + NUMERIC;
 
+    public static final String EMAIL_ALLOWED_SPCL_CHARS = '!#$%&\'\'*+-/=?^_`{|}~.';
+
     public DataMaskHelper() {
     }
 
@@ -101,30 +103,38 @@ public with sharing class DataMaskHelper {
         return formattedFirst + ' ' + formattedLast;
     }
 
-    /**
-     * Redacts characters in the originalValue from fromChar to toChar (1-based),
-     * preserving special characters (non-alphanumeric) in their original positions.
-     * Returns null if the calculated indices are out of bounds.
-     */
-    public static String generateRedactedValue(String originalValue, Integer fromChar, Integer toChar) {
-        if (originalValue == null || fromChar == null || toChar == null) {
+    /**                                                                                                                                                      
+    * Redacts alphanumeric characters in a phone field value from the specified                                                                             
+    * 1-based character range, replacing them with asterisks while preserving                                                                               
+    * special characters (e.g., dashes, parentheses, spaces) in their original positions.                                                                   
+    * The fromChar and toChar values refer to alphanumeric character positions only,                                                                        
+    * excluding special characters from the count.                                                                                                          
+    * Returns null if the original value is null, empty, already redacted (contains '*'),                                                                   
+    * or if the specified alphanumeric range is out of bounds.                                                                                              
+    */ 
+    public static String generateRedactedPhoneValue(String originalValue, Integer intFromChar, Integer intToChar) {
+        if (String.isBlank(originalValue) || originalValue.contains('*') || intFromChar == null || intToChar == null) {
             return null;
         }
 
-        Integer fromIndex = fromChar - 1;
-        Integer toIndex = toChar - 1;
+        Integer intFromIndex = intFromChar - 1;
+        Integer intToIndex = intToChar - 1;
+
+        if(intFromIndex < 0 || intToIndex < 0 || intFromIndex > intToIndex || intFromIndex >= originalValue.length() || intToIndex >= originalValue.length()) {
+            return null;
+        }
 
         // Build a list of only the alphanumeric character positions
-        List<Integer> charPositions = new List<Integer>();
+        String alphaNumericChars = ALPHANUMERIC + ALPHANUMERIC.toLowerCase();
+        List<Integer> list_intCharPositions = new List<Integer>();
         for (Integer i = 0; i < originalValue.length(); i++) {
-            String alphaNumericChars = ALPHANUMERIC + ALPHANUMERIC.toLowerCase();
             if (alphaNumericChars.contains(originalValue.substring(i, i + 1))) {
-                charPositions.add(i);
+                list_intCharPositions.add(i);
             }
         }
 
         // Check bounds against the count of alphanumeric characters only
-        if (fromIndex < 0 || fromIndex >= charPositions.size() || toIndex < 0 || toIndex >= charPositions.size() || toIndex < fromIndex) {
+        if (list_intCharPositions.isEmpty() || intFromIndex >= list_intCharPositions.size() || intToIndex >= list_intCharPositions.size()) {
             return null;
         }
 
@@ -135,12 +145,48 @@ public with sharing class DataMaskHelper {
         }
 
         // Replace chars in the specified alphanumeric range with asterisks
-        for (Integer pos = fromIndex; pos <= toIndex; pos++) {
-            Integer originalPos = charPositions[pos];
+        for (Integer pos = intFromIndex; pos <= intToIndex; pos++) {
+            Integer originalPos = list_intCharPositions[pos];
             resultChars[originalPos] = '*';
         }
 
         return String.join(resultChars, '');
+    }
+
+    public static String generateRedactedEmailValue(String originalValue, Integer intFromChar, Integer intToChar) {
+        if (String.isBlank(originalValue) || originalValue.contains('*') || intFromChar == null || intToChar == null) {
+            return null;
+        }
+
+        Integer intFromIndex = intFromChar - 1;
+        Integer intToIndex = intToChar - 1;
+
+        if(intFromIndex < 0 || intToIndex < 0 || intFromIndex > intToIndex || intFromIndex >= originalValue.length() || intToIndex >= originalValue.length()) {
+            return null;
+        }
+
+        // find the index of the character that appears before '@'
+        Integer intLastIndex = originalValue.lastIndexOf('@') - 1;
+
+        // check for out of bounds scenarios and return null
+        if(intFromIndex > intLastIndex || intToIndex > intLastIndex) {
+            return null;
+        }
+
+        // working scenarios
+        // extract the chars before '@' and replace the chars from intFromIndex to intToIndex with null
+        // Build result as list of characters
+        List<String> resultChars = new List<String>();
+        for (Integer i = 0; i <= intLastIndex; i++) {
+            resultChars.add(originalValue.substring(i, i + 1));
+        }                                                      
+
+        // Replace chars in range with asterisks
+        for (Integer pos = intFromIndex; pos <= intToIndex; pos++) {
+            resultChars[pos] = '*';
+        }
+        String redactedSection = String.join(resultChars, '');
+        return redactedSection + originalValue.substring(intLastIndex + 1);
     }
     
 }
