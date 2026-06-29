@@ -18,9 +18,6 @@
         
         <members>Batch_MaskObjectRecordsDetails</members>
         <members>Batch_MaskObjectRecordsDetailsTest</members>
-
-        <members>Batch_MaskQuoteRecordsDetails</members>
-        <members>Batch_MaskQuoteRecordsDetailsTest</members>
         
         <members>ObjectDataHelper</members>
         <members>ObjectDataHelperTest</members>
@@ -47,11 +44,6 @@
     <types>
         <members>Refresh_Org_UtilityBar</members>
         <name>FlexiPage</name>
-    </types>
-
-    <types>
-        <members>Quote</members>
-        <name>CustomObject</name>
     </types>
     
     <types>

@@ -2,6 +2,7 @@ import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getNonSetupObjects from '@salesforce/apex/ObjectDataHelper.getNonSetupObjects';
 import getObjectFields from '@salesforce/apex/ObjectDataHelper.getObjectFields';
+import redactCustomData from '@salesforce/apex/PostRefreshOrgProcessController.redactCustomData';
 
 export default class Or_customRedactionCmp extends LightningElement {
     static MAX_SELECTED_FIELDS = 25;
@@ -141,7 +142,7 @@ export default class Or_customRedactionCmp extends LightningElement {
         try {
             console.log('redaction payload: ', JSON.stringify(payload));
             // TODO: wire up Apex redaction method
-            // const result = await redactCustomData({ payload });
+            const result = await redactCustomData({ payload });
             this.dispatchEvent(new ShowToastEvent({
                 title: 'Redaction Initiated',
                 message: 'Redaction batch jobs have been queued. Check Apex Jobs for status.',
@@ -320,7 +321,7 @@ export default class Or_customRedactionCmp extends LightningElement {
     handleFieldChange(event) {
         const tileId = parseInt(event.currentTarget.dataset.tileId, 10);
         const tile = this.tilesList.find(t => t.id === tileId);
-        let selectedValues = event.detail.value;
+        let selectedValues = [...event.detail.value]; // clone to avoid shared reference
 
         if (tile) {
             if (selectedValues.length > Or_customRedactionCmp.MAX_SELECTED_FIELDS) {
@@ -331,8 +332,8 @@ export default class Or_customRedactionCmp extends LightningElement {
                     variant: 'warning'
                 }));
             }
-            tile.selectedFieldValues = selectedValues;
-            tile.fields = selectedValues.map(val => {
+            // Preserve unsaved field character configs
+            const newFields = selectedValues.map(val => {
                 const fieldDef = this.fieldOptions.find(f => f.value === val);
                 const existing = tile.fields.find(f => f.value === val);
                 return {
@@ -344,8 +345,11 @@ export default class Or_customRedactionCmp extends LightningElement {
                     isSaved: existing ? existing.isSaved : false
                 };
             });
-            tile.hasSelectedFields = tile.fields.length > 0;
-            this.tilesList = [...this.tilesList];
+            this.tilesList = this.tilesList.map(t =>
+                t.id === tileId
+                    ? { ...t, selectedFieldValues: selectedValues, fields: newFields, hasSelectedFields: newFields.length > 0 }
+                    : t
+            );
         }
     }
 
@@ -357,8 +361,7 @@ export default class Or_customRedactionCmp extends LightningElement {
             const allFieldValues = this.fieldOptions
                 .map(f => f.value)
                 .slice(0, Or_customRedactionCmp.MAX_SELECTED_FIELDS);
-            tile.selectedFieldValues = allFieldValues;
-            tile.fields = allFieldValues.map(val => {
+            const newFields = allFieldValues.map(val => {
                 const fieldDef = this.fieldOptions.find(f => f.value === val);
                 const existing = tile.fields.find(f => f.value === val);
                 return {
@@ -370,8 +373,11 @@ export default class Or_customRedactionCmp extends LightningElement {
                     isSaved: existing ? existing.isSaved : false
                 };
             });
-            tile.hasSelectedFields = tile.fields.length > 0;
-            this.tilesList = [...this.tilesList];
+            this.tilesList = this.tilesList.map(t =>
+                t.id === tileId
+                    ? { ...t, selectedFieldValues: allFieldValues, fields: newFields, hasSelectedFields: newFields.length > 0 }
+                    : t
+            );
         }
     }
 

@@ -310,29 +310,31 @@ export default class Or_customMaskingCmp extends LightningElement {
 
     handleFieldChange(event) {
         const tileId = parseInt(event.currentTarget.dataset.tileId, 10);
-        const tile = this.tilesList.find(t => t.id === tileId);
-        let selectedValues = event.detail.value;
+        let selectedValues = [...event.detail.value]; // clone to avoid shared reference
 
-        if (tile) {
-            if (selectedValues.length > Or_customComponent.MAX_SELECTED_FIELDS) {
-                selectedValues = selectedValues.slice(0, Or_customComponent.MAX_SELECTED_FIELDS);
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Field Limit Reached',
-                    message: `You can select a maximum of ${Or_customComponent.MAX_SELECTED_FIELDS} fields per object.`,
-                    variant: 'warning'
-                }));
-            }
-            tile.selectedFieldValues = selectedValues;
-            tile.fields = selectedValues.map(val => {
-                const fieldDef = this.fieldOptions.find(f => f.value === val);
-                return {
-                    value: val,
-                    dataType: fieldDef ? fieldDef.dataType : '',
-                    displayLabel: fieldDef ? fieldDef.label : val
-                };
-            });
-            this.tilesList = [...this.tilesList];
+        if (selectedValues.length > Or_customMaskingCmp.MAX_SELECTED_FIELDS) {
+            selectedValues = selectedValues.slice(0, Or_customMaskingCmp.MAX_SELECTED_FIELDS);
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Field Limit Reached',
+                message: `You can select a maximum of ${Or_customMaskingCmp.MAX_SELECTED_FIELDS} fields per object.`,
+                variant: 'warning'
+            }));
         }
+
+        const newFields = selectedValues.map(val => {
+            const fieldDef = this.fieldOptions.find(f => f.value === val);
+            return {
+                value: val,
+                dataType: fieldDef ? fieldDef.dataType : '',
+                displayLabel: fieldDef ? fieldDef.label : val
+            };
+        });
+
+        this.tilesList = this.tilesList.map(t =>
+            Number(t.id) === tileId
+                ? { ...t, selectedFieldValues: selectedValues, fields: newFields }
+                : t
+        );
     }
 
     handleSelectAllFields(event) {
@@ -342,21 +344,25 @@ export default class Or_customMaskingCmp extends LightningElement {
         if (tile && this.fieldOptions.length > 0) {
             const allFieldValues = this.fieldOptions
                 .map(f => f.value)
-                .slice(0, Or_customComponent.MAX_SELECTED_FIELDS);
-            tile.selectedFieldValues = allFieldValues;
-            tile.fields = allFieldValues.map(val => {
+                .slice(0, Or_customMaskingCmp.MAX_SELECTED_FIELDS);
+            const newFields = allFieldValues.map(val => {
                 const fieldDef = this.fieldOptions.find(f => f.value === val);
                 return {
                     value: val,
                     dataType: fieldDef ? fieldDef.dataType : '',
                     displayLabel: fieldDef ? fieldDef.label : val
-                };
-            });
-            this.tilesList = [...this.tilesList];
+                }(automation_disabled)            });
+            this.tilesList = this.tilesList.map(t =>
+                Number(t.id) === tileId
+                    ? { ...t, selectedFieldValues: allFieldValues, fields: newFields }
+                    : t
+            );
         }
     }
 
     processMaskData() {
+        console.log('Tiles list', this.tilesList);
+        
         return this.tilesList
             .filter(tile => tile.object !== '' && tile.fields && tile.fields.length > 0)
             .map(tile => ({

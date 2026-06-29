@@ -33,7 +33,7 @@ private class Batch_MaskOpportunityRecordsDetailsTest {
         Opportunity opp = createOpportunity(acc.Id);
 
         Test.startTest();
-        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails(new Set<Id>(), new Set<Id>()));
+        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails());
         Test.stopTest();
 
         Opportunity updated = [SELECT Name FROM Opportunity WHERE Id = :opp.Id];
@@ -46,7 +46,7 @@ private class Batch_MaskOpportunityRecordsDetailsTest {
         createOpportunity(acc.Id);
 
         Test.startTest();
-        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails(new Set<Id>(), new Set<Id>()));
+        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails());
         Test.stopTest();
 
         Account updated = [SELECT Phone, Website, AccountNumber FROM Account WHERE Id = :acc.Id];
@@ -56,38 +56,9 @@ private class Batch_MaskOpportunityRecordsDetailsTest {
     }
 
     @isTest
-    static void testExecute_skipsAlreadyMaskedAccount() {
-        Account acc = createAccount();
-        createOpportunity(acc.Id);
-
-        Test.startTest();
-        // Account is pre-marked as already processed
-        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails(new Set<Id>(), new Set<Id>{ acc.Id }));
-        Test.stopTest();
-
-        Account unchanged = [SELECT Phone, Website FROM Account WHERE Id = :acc.Id];
-        Assert.areEqual('(123) 456-7890',           unchanged.Phone,   'Pre-masked account Phone should not change');
-        Assert.areEqual('https://www.original.com', unchanged.Website, 'Pre-masked account Website should not change');
-    }
-
-    @isTest
-    static void testExecute_skipsOpportunitiesInExclusionSet() {
-        Account acc = createAccount();
-        Opportunity opp = createOpportunity(acc.Id);
-
-        Test.startTest();
-        // Opp is pre-marked — excluded from the query
-        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails(new Set<Id>{ opp.Id }, new Set<Id>()));
-        Test.stopTest();
-
-        Opportunity unchanged = [SELECT Name FROM Opportunity WHERE Id = :opp.Id];
-        Assert.areEqual('Original Opportunity', unchanged.Name, 'Opportunity in exclusion set should not be masked');
-    }
-
-    @isTest
     static void testExecute_emptyScope_noException() {
         Test.startTest();
-        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails(new Set<Id>(), new Set<Id>()));
+        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails());
         Test.stopTest();
 
         Assert.areEqual(0, [SELECT COUNT() FROM Opportunity], 'No opportunities should exist');
@@ -104,7 +75,7 @@ private class Batch_MaskOpportunityRecordsDetailsTest {
         createOpportunity(linkedAcc.Id);
 
         Test.startTest();
-        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails(new Set<Id>(), new Set<Id>()));
+        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails());
         Test.stopTest();
 
         Account updated = [SELECT Name FROM Account WHERE Id = :standaloneAcc.Id];
@@ -126,7 +97,7 @@ private class Batch_MaskOpportunityRecordsDetailsTest {
         insert opp2;
 
         Test.startTest();
-        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails(new Set<Id>(), new Set<Id>()));
+        Database.executeBatch(new Batch_MaskOpportunityRecordsDetails());
         Test.stopTest();
 
         List<Opportunity> updated = [SELECT Name FROM Opportunity ORDER BY Name];

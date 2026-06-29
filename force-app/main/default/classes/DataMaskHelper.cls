@@ -100,4 +100,47 @@ public with sharing class DataMaskHelper {
 
         return formattedFirst + ' ' + formattedLast;
     }
+
+    /**
+     * Redacts characters in the originalValue from fromChar to toChar (1-based),
+     * preserving special characters (non-alphanumeric) in their original positions.
+     * Returns null if the calculated indices are out of bounds.
+     */
+    public static String generateRedactedValue(String originalValue, Integer fromChar, Integer toChar) {
+        if (originalValue == null || fromChar == null || toChar == null) {
+            return null;
+        }
+
+        Integer fromIndex = fromChar - 1;
+        Integer toIndex = toChar - 1;
+
+        // Build a list of only the alphanumeric character positions
+        List<Integer> charPositions = new List<Integer>();
+        for (Integer i = 0; i < originalValue.length(); i++) {
+            String alphaNumericChars = ALPHANUMERIC + ALPHANUMERIC.toLowerCase();
+            if (alphaNumericChars.contains(originalValue.substring(i, i + 1))) {
+                charPositions.add(i);
+            }
+        }
+
+        // Check bounds against the count of alphanumeric characters only
+        if (fromIndex < 0 || fromIndex >= charPositions.size() || toIndex < 0 || toIndex >= charPositions.size() || toIndex < fromIndex) {
+            return null;
+        }
+
+        // Build result, preserving special characters
+        List<String> resultChars = new List<String>();
+        for (Integer i = 0; i < originalValue.length(); i++) {
+            resultChars.add(originalValue.substring(i, i + 1));
+        }
+
+        // Replace chars in the specified alphanumeric range with asterisks
+        for (Integer pos = fromIndex; pos <= toIndex; pos++) {
+            Integer originalPos = charPositions[pos];
+            resultChars[originalPos] = '*';
+        }
+
+        return String.join(resultChars, '');
+    }
+    
 }

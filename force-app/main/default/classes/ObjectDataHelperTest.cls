@@ -25,45 +25,18 @@ private class ObjectDataHelperTest {
     // ── getNonSetupObjects ────────────────────────────────────────────────────
 
     @isTest
-    static void testGetNonSetupObjects_blankSearchTerm_returnsEmptyList() {
-        List<ObjectDataHelper.SObjectWrapper> result =
-            ObjectDataHelper.getNonSetupObjects('');
-
-        Assert.isNotNull(result);
-        Assert.areEqual(0, result.size(), 'Blank search term should return empty list');
-    }
-
-    @isTest
-    static void testGetNonSetupObjects_nullSearchTerm_returnsEmptyList() {
-        List<ObjectDataHelper.SObjectWrapper> result =
-            ObjectDataHelper.getNonSetupObjects(null);
-
-        Assert.isNotNull(result);
-        Assert.areEqual(0, result.size(), 'Null search term should return empty list');
-    }
-
-    @isTest
     static void testGetNonSetupObjects_returnsNonEmptyList() {
         List<ObjectDataHelper.SObjectWrapper> result =
-            ObjectDataHelper.getNonSetupObjects('A');
+            ObjectDataHelper.getNonSetupObjects();
 
         Assert.isNotNull(result);
-        Assert.isTrue(result.size() > 0, 'At least one queryable/searchable object should exist');
-    }
-
-    @isTest
-    static void testGetNonSetupObjects_noMatchingObjects_returnsEmptyList() {
-        List<ObjectDataHelper.SObjectWrapper> result =
-            ObjectDataHelper.getNonSetupObjects('xyzqqqnotanobjectzzz');
-
-        Assert.isNotNull(result);
-        Assert.areEqual(0, result.size(), 'Non-matching search term should return empty list');
+        Assert.isFalse(result.isEmpty(), 'At least one queryable object should exist');
     }
 
     @isTest
     static void testGetNonSetupObjects_containsKnownStandardObjects() {
         List<ObjectDataHelper.SObjectWrapper> result =
-            ObjectDataHelper.getNonSetupObjects('A');
+            ObjectDataHelper.getNonSetupObjects();
 
         Set<String> apiNames = new Set<String>();
         for (ObjectDataHelper.SObjectWrapper w : result) {
@@ -78,7 +51,7 @@ private class ObjectDataHelperTest {
     @isTest
     static void testGetNonSetupObjects_isSortedByLabel() {
         List<ObjectDataHelper.SObjectWrapper> result =
-            ObjectDataHelper.getNonSetupObjects('A');
+            ObjectDataHelper.getNonSetupObjects();
 
         for (Integer i = 0; i < result.size() - 1; i++) {
             Assert.isTrue(
