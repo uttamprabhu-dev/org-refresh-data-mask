@@ -18,7 +18,7 @@ const redactionCriteria = [
     {
         type: 'STRING',
         startChar: 1,
-        endChar: null,
+        endChar: 256,
         info: '',
         dropdown: false
     },

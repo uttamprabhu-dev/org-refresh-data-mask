@@ -6,7 +6,29 @@ import redactCustomData from '@salesforce/apex/PostRefreshOrgProcessController.r
 
 export default class Or_customRedactionCmp extends LightningElement {
 
-    @api redactionCriteria;
+    _redactionCriteria = [];
+
+    @api
+    get redactionCriteria() {
+        return this._redactionCriteria;
+    }
+
+    set redactionCriteria(value) {
+        this._redactionCriteria = value;
+        this._refreshFieldCharLimits();
+    }
+
+    _refreshFieldCharLimits() {
+        if (!this.tilesList || this.tilesList.length === 0) return;
+        this.tilesList = this.tilesList.map(tile => ({
+            ...tile,
+            fields: tile.fields.map(field => {
+                const criteria = this.getRedactionCriteria(field.dataType);
+                return { ...field, minChar: criteria.startChar, maxChar: criteria.endChar };
+            })
+        }));
+    }
+
     static MAX_SELECTED_FIELDS = 25;
 
     @track fieldOptions = [];
@@ -17,6 +39,13 @@ export default class Or_customRedactionCmp extends LightningElement {
 
     _searchTimers = {};
     _allObjects = null;
+
+    getRedactionCriteria(dataType) {
+        if (!this.redactionCriteria || !Array.isArray(this.redactionCriteria)) {
+            return { startChar: 0, endChar: 99 };
+        }
+        return this.redactionCriteria.find(c => c.type === dataType) || { startChar: 0, endChar: 99 };
+    }
 
     async loadAllObjects() {
         if (this._allObjects === null || this._allObjects.length <= 0) {
@@ -338,13 +367,16 @@ export default class Or_customRedactionCmp extends LightningElement {
             const newFields = selectedValues.map(val => {
                 const fieldDef = this.fieldOptions.find(f => f.value === val);
                 const existing = tile.fields.find(f => f.value === val);
+                const criteria = this.getRedactionCriteria(fieldDef ? fieldDef.dataType : '');
                 return {
                     value: val,
                     dataType: fieldDef ? fieldDef.dataType : '',
                     displayLabel: fieldDef ? fieldDef.label : val,
-                    fromChar: existing ? existing.fromChar : '',
-                    toChar: existing ? existing.toChar : '',
-                    isSaved: existing ? existing.isSaved : false
+                    fromChar: existing ? existing.fromChar : (criteria.startChar != null ? String(criteria.startChar) : ''),
+                    toChar: existing ? existing.toChar : (criteria.startChar != null ? String(criteria.startChar) : ''),
+                    isSaved: existing ? existing.isSaved : false,
+                    minChar: criteria.startChar,
+                    maxChar: criteria.endChar
                 };
             });
             this.tilesList = this.tilesList.map(t =>
@@ -366,13 +398,16 @@ export default class Or_customRedactionCmp extends LightningElement {
             const newFields = allFieldValues.map(val => {
                 const fieldDef = this.fieldOptions.find(f => f.value === val);
                 const existing = tile.fields.find(f => f.value === val);
+                const criteria = this.getRedactionCriteria(fieldDef ? fieldDef.dataType : '');
                 return {
                     value: val,
                     dataType: fieldDef ? fieldDef.dataType : '',
                     displayLabel: fieldDef ? fieldDef.label : val,
-                    fromChar: existing ? existing.fromChar : '',
-                    toChar: existing ? existing.toChar : '',
-                    isSaved: existing ? existing.isSaved : false
+                    fromChar: existing ? existing.fromChar : (criteria.startChar != null ? String(criteria.startChar) : ''),
+                    toChar: existing ? existing.toChar : (criteria.startChar != null ? String(criteria.startChar) : ''),
+                    isSaved: existing ? existing.isSaved : false,
+                    minChar: criteria.startChar,
+                    maxChar: criteria.endChar
                 };
             });
             this.tilesList = this.tilesList.map(t =>
@@ -389,20 +424,42 @@ export default class Or_customRedactionCmp extends LightningElement {
         const charType = event.currentTarget.dataset.charType;
         let value = event.target.value;
 
-        if (value.length > 2) {
-            value = value.slice(0, 2);
-            event.target.value = value;
-        }
-
         const tile = this.tilesList.find(t => t.id === tileId);
         if (!tile) return;
         const field = tile.fields.find(f => f.value === fieldApiName);
         if (!field) return;
 
+        const min = field.minChar !== undefined && field.minChar !== null ? Number(field.minChar) : 0;
+        const max = field.maxChar !== undefined && field.maxChar !== null ? Number(field.maxChar) : 99;
+
+        // Enforce max length of 2 digits and numeric min/max bounds
+        let numericValue = parseInt(value, 10);
+        if (isNaN(numericValue)) {
+            numericValue = '';
+        } else if (numericValue > max) {
+            numericValue = max;
+        } else if (numericValue < min) {
+            numericValue = min;
+        }
+
+        value = numericValue !== '' ? String(numericValue) : '';
+
         if (charType === 'from') {
             field.fromChar = value;
+            const fromValue = value !== '' ? parseInt(value, 10) : NaN;
+            if (!isNaN(fromValue)) {
+                const toValue = field.toChar !== '' ? parseInt(field.toChar, 10) : NaN;
+                if (!isNaN(toValue) && toValue < fromValue) {
+                    field.toChar = value;
+                }
+            }
         } else {
             field.toChar = value;
+            const toValue = value !== '' ? parseInt(value, 10) : NaN;
+            const fromValue = field.fromChar !== '' ? parseInt(field.fromChar, 10) : NaN;
+            if (!isNaN(toValue) && !isNaN(fromValue) && toValue < fromValue) {
+                field.fromChar = value;
+            }
         }
         field.isSaved = false;
         this.tilesList = [...this.tilesList];

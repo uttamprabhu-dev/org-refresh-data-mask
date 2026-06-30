@@ -4,6 +4,7 @@ public with sharing class DataMaskHelper {
     public static final String NUMERIC = '0123456789';
     public static final String ALPHANUMERIC = ALPHA + NUMERIC;
 
+    public static final String PHONE_ALLOWED_SPCL_CHARS = '!#$%&\'\'*+-/=?^_`{|}~.';
     public static final String EMAIL_ALLOWED_SPCL_CHARS = '!#$%&\'\'*+-/=?^_`{|}~.';
 
     public DataMaskHelper() {
@@ -13,10 +14,22 @@ public with sharing class DataMaskHelper {
      * Generates a random phone number in format (XXX) XXX-XXXX
      */
     public static String generate_randomPhoneNumber() {
-        String areaCode = generateRandomDigits(3);
-        String prefix = generateRandomDigits(3);
-        String lineNumber = generateRandomDigits(4);
-        return '(' + areaCode + ') ' + prefix + '-' + lineNumber;
+        String digits = generateRandomDigits(8);
+
+        String ch1 = getRandomPhoneSpecialChar();
+        String ch2 = getRandomPhoneSpecialChar();
+
+        // Insert 2 special characters into the 10-character string
+        return digits.substring(0, 4)
+            + ch1
+            + digits.substring(4, 7)
+            + ch2
+            + digits.substring(7);
+    }
+
+    private static String getRandomPhoneSpecialChar() {
+        Integer index = Math.mod(Math.abs(Crypto.getRandomInteger()), PHONE_ALLOWED_SPCL_CHARS.length());
+        return PHONE_ALLOWED_SPCL_CHARS.substring(index, index + 1);
     }
 
     /**
@@ -125,7 +138,7 @@ public with sharing class DataMaskHelper {
         }
 
         // Build a list of only the alphanumeric character positions
-        String alphaNumericChars = ALPHANUMERIC + ALPHANUMERIC.toLowerCase();
+        String alphaNumericChars = ALPHANUMERIC + ALPHANUMERIC.toLowerCase() + PHONE_ALLOWED_SPCL_CHARS;
         List<Integer> list_intCharPositions = new List<Integer>();
         for (Integer i = 0; i < originalValue.length(); i++) {
             if (alphaNumericChars.contains(originalValue.substring(i, i + 1))) {
