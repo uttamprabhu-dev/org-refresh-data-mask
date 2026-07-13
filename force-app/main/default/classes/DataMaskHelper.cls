@@ -37,7 +37,7 @@ public with sharing class DataMaskHelper {
      */
     public static String generate_randomEmail() {
         String username = generateRandomString(8, ALPHANUMERIC);
-        String[] domains = new String[]{'gmail.com', 'yahoo.com', 'outlook.com', 'example.com', 'test.org'};
+        String[] domains = new String[]{ 'example.net', 'example.org', 'example.com' };
         String domain = domains[Math.mod(Math.abs((Integer)(Crypto.getRandomLong())), domains.size())];
         return username + '@' + domain;
     }

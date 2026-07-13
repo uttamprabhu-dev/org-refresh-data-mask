@@ -58,7 +58,10 @@ public class Batch_RedactObjectRecordDetails implements Database.Batchable<SObje
         }
         // 5. Single DML statement for all records
         if (!list_recordsToUpdate.isEmpty()) {
-            Database.SaveResult[] list_updatedRecords = Database.update(list_recordsToUpdate, false);
+            Database.DMLOptions dmo = new Database.DMLOptions();
+            dmo.DuplicateRuleHeader.allowSave = true;
+            dmo.optAllOrNone = false;
+            Database.SaveResult[] list_updatedRecords = Database.update(list_recordsToUpdate, dmo);
             for (Integer i = 0; i < list_updatedRecords.size(); i++) {
                 Database.SaveResult sr = list_updatedRecords[i];
                 

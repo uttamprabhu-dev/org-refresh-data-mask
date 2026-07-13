@@ -26,7 +26,19 @@ public class Batch_MaskAccountRecordsDetails implements Database.Batchable<sObje
         }
 
         // DML
-        if (!list_accountsToUpdate.isEmpty()) update list_accountsToUpdate;
+        if (!list_accountsToUpdate.isEmpty()) {
+            Database.DMLOptions dmo = new Database.DMLOptions();
+            dmo.DuplicateRuleHeader.allowSave = true;
+            dmo.optAllOrNone = false;
+            Database.SaveResult[] results = Database.update(list_accountsToUpdate, dmo);
+            for (Database.SaveResult sr : results) {
+                if (!sr.isSuccess()) {
+                    for (Database.Error err : sr.getErrors()) {
+                        System.debug(LoggingLevel.ERROR, 'Batch_MaskAccountRecordsDetails Update Error: ' + err.getStatusCode() + ' - ' + err.getMessage());
+                    }
+                }
+            }
+        }
     }
 
     public void finish(Database.BatchableContext bc) {

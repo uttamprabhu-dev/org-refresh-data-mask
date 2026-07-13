@@ -30,10 +30,30 @@ public with sharing class Batch_MaskOpportunityRecordsDetails implements Databas
         }
 
         // DML
-        if (!list_oppsToUpdate.isEmpty()) update list_oppsToUpdate;
+        Database.DMLOptions dmo = new Database.DMLOptions();
+        dmo.DuplicateRuleHeader.allowSave = true;
+        dmo.optAllOrNone = false;
+
+        if (!list_oppsToUpdate.isEmpty()) {
+            Database.SaveResult[] results = Database.update(list_oppsToUpdate, dmo);
+            for (Database.SaveResult sr : results) {
+                if (!sr.isSuccess()) {
+                    for (Database.Error err : sr.getErrors()) {
+                        System.debug(LoggingLevel.ERROR, 'Batch_MaskOpportunityRecordsDetails Opp Update Error: ' + err.getStatusCode() + ' - ' + err.getMessage());
+                    }
+                }
+            }
+        }
 
         if (!map_accountsToUpdateMap.isEmpty()) {
-            update map_accountsToUpdateMap.values();
+            Database.SaveResult[] results = Database.update(map_accountsToUpdateMap.values(), dmo);
+            for (Database.SaveResult sr : results) {
+                if (!sr.isSuccess()) {
+                    for (Database.Error err : sr.getErrors()) {
+                        System.debug(LoggingLevel.ERROR, 'Batch_MaskOpportunityRecordsDetails Account Update Error: ' + err.getStatusCode() + ' - ' + err.getMessage());
+                    }
+                }
+            }
             set_idAccountIds.addAll(map_accountsToUpdateMap.keySet());
         }
     }
