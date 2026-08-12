@@ -80,30 +80,41 @@ private class RefreshOrg_UtilsTest {
     @isTest
     static void testIsSensitiveField_emailField_returnsTrue() {
         Schema.DescribeFieldResult field = Schema.SObjectType.Contact.fields.Email.getSObjectField().getDescribe();
-        Assert.isTrue(RefreshOrg_Utils.isSensitiveField(field), 'An Email field should be sensitive');
+        Assert.isTrue(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.MASK_OPERATION_TYPE), 'An Email field should be sensitive for custom masking');
+        Assert.isTrue(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.REDACTION_OPERATION_TYPE), 'An Email field should be sensitive for custom redaction');
     }
 
     @isTest
     static void testIsSensitiveField_phoneField_returnsTrue() {
         Schema.DescribeFieldResult field = Schema.SObjectType.Contact.fields.Phone.getSObjectField().getDescribe();
-        Assert.isTrue(RefreshOrg_Utils.isSensitiveField(field), 'A Phone field should be sensitive');
+        Assert.isTrue(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.MASK_OPERATION_TYPE), 'A Phone field should be sensitive for custom masking');
+        Assert.isTrue(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.REDACTION_OPERATION_TYPE), 'A Phone field should be sensitive for custom redaction');
     }
 
     @isTest
-    static void testIsSensitiveField_textField_returnsFalse() {
+    static void testIsSensitiveField_textField_redaction_returnsTrue() {
         Schema.DescribeFieldResult field = Schema.SObjectType.Account.fields.Name.getSObjectField().getDescribe();
-        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field), 'A plain text field should not be sensitive');
+        Assert.isTrue(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.REDACTION_OPERATION_TYPE), 'A text field should be sensitive for custom redaction');
+        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.MASK_OPERATION_TYPE), 'A text field should not be sensitive for custom masking');
     }
 
     @isTest
     static void testIsSensitiveField_dateField_returnsFalse() {
         Schema.DescribeFieldResult field = Schema.SObjectType.Opportunity.fields.CloseDate.getSObjectField().getDescribe();
-        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field), 'A date field should not be sensitive');
+        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.MASK_OPERATION_TYPE), 'A date field should not be sensitive');
+        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.REDACTION_OPERATION_TYPE), 'A date field should not be sensitive');
     }
 
     @isTest
     static void testIsSensitiveField_referenceField_returnsFalse() {
         Schema.DescribeFieldResult field = Schema.SObjectType.Contact.fields.AccountId.getSObjectField().getDescribe();
-        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field), 'A reference field should not be sensitive');
+        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.MASK_OPERATION_TYPE), 'A reference field should not be sensitive');
+        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field, RefreshOrg_Utils.REDACTION_OPERATION_TYPE), 'A reference field should not be sensitive');
+    }
+
+    @isTest
+    static void testIsSensitiveField_unsupportedOperationType_returnsFalse() {
+        Schema.DescribeFieldResult field = Schema.SObjectType.Contact.fields.Email.getSObjectField().getDescribe();
+        Assert.isFalse(RefreshOrg_Utils.isSensitiveField(field, 'unsupported-operation'), 'An unsupported operation type should return false');
     }
 }
